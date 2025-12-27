@@ -223,6 +223,19 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 
 ## 4. Login Page with Google Auth
 
+### 🔐 Login Flow Overview
+
+**Login Process:**
+1. User คลิกปุ่ม "Continue with Google"
+2. เปิด Google account chooser popup
+3. User เลือกบัญชี Google
+4. Firebase authenticate user
+5. AuthContext อัปเดต `currentUser`
+6. Navigation bar แสดงข้อมูลผู้ใช้
+7. Redirect ไปหน้า home
+
+---
+
 ### Step 4.1: Create Continue with Google Button
 
 **File:** `components/continue-with-google-button.tsx`
@@ -243,12 +256,20 @@ export default function ContinueWithGoogleButton() {
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
+      
+      // Step 1: สร้าง Google Auth Provider
       const provider = new GoogleAuthProvider();
+      
+      // Step 2: เปิด popup สำหรับเลือกบัญชี Google
       const result = await signInWithPopup(auth, provider);
       
-      // User signed in successfully
+      // Step 3: Login สำเร็จ - ได้ user object
       console.log("Signed in:", result.user);
+      // result.user มี properties: uid, email, displayName, photoURL
+      
+      // Step 4: Redirect ไปหน้า home
       router.push("/");
+      
     } catch (error: any) {
       console.error("Error signing in:", error);
       
@@ -284,9 +305,23 @@ export default function ContinueWithGoogleButton() {
 
 **Key Points:**
 - ✅ ใช้ `signInWithPopup` สำหรับ Google authentication
-- ✅ Handle errors อย่างเหมาะสม
-- ✅ Show loading state
-- ✅ Redirect ไปหน้า home หลัง login สำเร็จ
+- ✅ `GoogleAuthProvider` - สร้าง provider สำหรับ Google OAuth
+- ✅ `signInWithPopup(auth, provider)` - เปิด popup และ authenticate
+- ✅ `result.user` - ได้ Firebase User object หลัง login สำเร็จ
+- ✅ Handle errors อย่างเหมาะสม (popup closed, blocked, etc.)
+- ✅ Show loading state (`loading ? "Signing in..." : "Continue with Google"`)
+- ✅ Redirect ไปหน้า home หลัง login สำเร็จ (`router.push("/")`)
+
+**User Object Properties:**
+```tsx
+result.user = {
+  uid: "user-id-123",           // Unique user ID
+  email: "user@example.com",     // Email address
+  displayName: "John Doe",        // Display name
+  photoURL: "https://...",        // Profile photo URL
+  emailVerified: true,           // Email verified status
+}
+```
 
 ### Step 4.2: Create Login Page
 
@@ -340,12 +375,13 @@ export default function LoginPage() {
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { User } from "firebase/auth";
+import { User, signOut } from "firebase/auth";
 import { auth } from "@/firebase/client";
 import { onAuthStateChanged } from "firebase/auth";
 
 type AuthContextType = {
   currentUser: User | null;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -360,8 +396,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
+  // 🔓 Logout Function - Sign out user from Firebase
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      // currentUser will be set to null automatically by onAuthStateChanged
+    } catch (error) {
+      console.error("Error signing out:", error);
+      throw error; // Re-throw to let component handle it
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ currentUser }}>
+    <AuthContext.Provider value={{ currentUser, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -374,7 +421,17 @@ export const useAuth = () => useContext(AuthContext);
 - ✅ ใช้ `createContext` เพื่อสร้าง Context
 - ✅ ระบุ TypeScript type: `AuthContextType | null`
 - ✅ ใช้ `onAuthStateChanged` เพื่อ listen auth state
+- ✅ เพิ่ม `logout` function ใน Context เพื่อให้ใช้งานได้ง่าย
+- ✅ `logout` function จะ sign out จาก Firebase และ `currentUser` จะอัปเดตเป็น `null` อัตโนมัติ
 - ✅ Export `useAuth` hook สำหรับใช้ใน components
+
+**AuthContextType:**
+```tsx
+type AuthContextType = {
+  currentUser: User | null;  // Current logged in user
+  logout: () => Promise<void>; // Logout function
+}
+```
 
 ### Step 5.2: Wrap App with AuthProvider
 
@@ -454,8 +511,6 @@ export default function RootLayout({
 "use client";
 
 import Link from "next/link";
-import { signOut } from "firebase/auth";
-import { auth } from "@/firebase/client";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth";
 import { Sun, Moon } from "lucide-react";
@@ -500,12 +555,22 @@ export default function Navigation() {
     window.dispatchEvent(new Event('themechange'));
   };
 
+  // 🔓 Logout Function - ใช้ logout จาก Context
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      // Step 1: ใช้ logout function จาก Context
+      await authContext?.logout();
+      
+      // Step 2: AuthContext จะอัปเดต currentUser เป็น null อัตโนมัติ
+      // (เพราะ onAuthStateChanged ใน AuthProvider จะ trigger)
+      
+      // Step 3: Redirect ไปหน้า home
       router.push("/");
+      
+      // Step 4: Navigation bar จะแสดง "Login | Register" แทน
     } catch (error) {
       console.error("Error signing out:", error);
+      // Handle error (optional: show error message to user)
     }
   };
 
@@ -562,6 +627,8 @@ export default function Navigation() {
 
 **Key Points:**
 - ✅ ใช้ `useAuth()` จาก Context แทน `useState` และ `onAuthStateChanged`
+- ✅ ใช้ `logout()` จาก Context แทน `signOut(auth)` โดยตรง
+- ✅ ไม่ต้อง import `signOut` และ `auth` ใน Navigation component
 - ✅ แสดงข้อมูลผู้ใช้ (`displayName` หรือ `email`) ก่อนปุ่ม Logout พร้อม "Hi," นำหน้า
 - ✅ เพิ่ม Dark/Light Mode Toggle button
 - ✅ ใช้ `lucide-react` สำหรับไอคอน Sun และ Moon
@@ -571,6 +638,70 @@ export default function Navigation() {
 **ผลลัพธ์:**
 - เมื่อ login แล้ว: `[ปุ่มสลับโหมด] Hi, [ชื่อผู้ใช้หรืออีเมล] Logout`
 - เมื่อยังไม่ login: `[ปุ่มสลับโหมด] Login | Register`
+
+---
+
+### 🔓 Logout Flow Overview
+
+**Logout Process:**
+1. User คลิกปุ่ม "Logout"
+2. เรียก `logout()` จาก AuthContext
+3. `logout()` เรียก `signOut(auth)` จาก Firebase Auth
+4. Firebase clear authentication state
+5. `onAuthStateChanged` ใน AuthProvider trigger
+6. AuthContext อัปเดต `currentUser` เป็น `null`
+7. Navigation bar อัปเดตแสดง "Login | Register"
+8. Redirect ไปหน้า home
+
+**Logout Function in Context:**
+
+```tsx
+// context/auth.tsx
+const logout = async () => {
+  try {
+    await signOut(auth);
+    // currentUser will be set to null automatically by onAuthStateChanged
+  } catch (error) {
+    console.error("Error signing out:", error);
+    throw error; // Re-throw to let component handle it
+  }
+};
+```
+
+**Logout Function in Navigation:**
+
+```tsx
+// components/navigation.tsx
+const handleLogout = async () => {
+  try {
+    // Step 1: ใช้ logout function จาก Context
+    await authContext?.logout();
+    
+    // Step 2: AuthContext จะอัปเดตอัตโนมัติ
+    // onAuthStateChanged ใน AuthProvider จะ trigger
+    // และ set currentUser เป็น null
+    
+    // Step 3: Redirect ไปหน้า home
+    router.push("/");
+    
+  } catch (error) {
+    console.error("Error signing out:", error);
+  }
+};
+```
+
+**ข้อดีของการใช้ logout จาก Context:**
+- ✅ ไม่ต้อง import `signOut` และ `auth` ในทุก component
+- ✅ Logout logic อยู่ที่เดียว (DRY principle)
+- ✅ ใช้ได้จากทุก component ผ่าน `useAuth()`
+- ✅ Code สะอาดและ maintainable มากขึ้น
+
+**What Happens After Logout:**
+- ✅ `auth.currentUser` กลายเป็น `null`
+- ✅ `AuthContext.currentUser` กลายเป็น `null`
+- ✅ Navigation bar แสดง "Login | Register" แทน
+- ✅ Protected routes จะ redirect ไปหน้า login (ถ้ามี)
+- ✅ User session ถูก clear ทั้งหมด
 
 ---
 

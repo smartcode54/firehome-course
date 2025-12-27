@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { signOut } from "firebase/auth";
-import { auth } from "@/firebase/client";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth";
 import { Sun, Moon } from "lucide-react";
@@ -47,12 +45,20 @@ export default function Navigation() {
     window.dispatchEvent(new Event('themechange'));
   };
 
+  // 🔓 Logout Function - ใช้ logout จาก Context
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      // ใช้ logout function จาก Context
+      await authContext?.logout();
+      
+      // Redirect ไปหน้า home
       router.push("/");
+      
+      // Navigation bar จะแสดง "Login | Register" แทน
+      // (currentUser จะเป็น null อัตโนมัติจาก onAuthStateChanged)
     } catch (error) {
       console.error("Error signing out:", error);
+      // Handle error (optional: show error message to user)
     }
   };
 
@@ -82,6 +88,7 @@ export default function Navigation() {
               <span className="text-sm">
                 Hi, {currentUser.displayName || currentUser.email}
               </span>
+              <p> | </p>
               <button
                 onClick={handleLogout}
                 className="text-sm hover:underline"
