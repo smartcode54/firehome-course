@@ -8,6 +8,7 @@
 5. [Context API for Authentication](#5-context-api-for-authentication)
 6. [Display User Info in Navbar](#6-display-user-info-in-navbar)
 7. [Dark/Light Mode Toggle](#7-darklight-mode-toggle)
+8. [Add Icon to Navigation & Configure Poppins Font](#8-add-icon-to-navigation--configure-poppins-font)
 
 ---
 
@@ -778,6 +779,125 @@ const toggleTheme = () => {
 ```bash
 npm install lucide-react
 ```
+
+---
+
+## 8. Add Icon to Navigation & Configure Poppins Font
+
+### Step 8.1: Add Flame Icon to Fire Home Logo
+
+**File:** `components/navigation.tsx`
+
+เพิ่ม Flame icon ก่อน "Fire Home" text:
+
+```tsx
+import { Sun, Moon, Flame } from "lucide-react";
+
+// ใน JSX
+<Link href="/" className="text-2xl font-semibold flex items-center gap-2">
+  <Flame className="w-5 h-5" />
+  Fire Home
+</Link>
+```
+
+**Key Points:**
+- ✅ Import `Flame` จาก `lucide-react`
+- ✅ ใช้ `flex items-center gap-2` เพื่อจัดตำแหน่ง icon และ text
+- ✅ Icon จะแสดงก่อน text "Fire Home"
+
+---
+
+### Step 8.2: Configure Poppins Font in Layout
+
+**File:** `app/layout.tsx`
+
+ย้าย Poppins font configuration ไปไว้ที่ layout เพื่อใช้ได้ทั้งแอป:
+
+```tsx
+import { Poppins } from "next/font/google";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+});
+
+// ใน body tag
+<body
+  className={`${geistSans.variable} ${geistMono.variable} ${poppins.className} antialiased`}
+>
+```
+
+**Key Points:**
+- ✅ Import `Poppins` จาก `next/font/google`
+- ✅ Configure font weights ที่ต้องการใช้
+- ✅ ใช้ `${poppins.className}` ใน body tag เพื่อให้ Poppins เป็น default font ทั้งแอป
+- ✅ ไม่ต้อง import Poppins ในแต่ละ component อีกต่อไป
+
+**ข้อดี:**
+- ✅ Font ใช้ได้ทั้งแอปโดยไม่ต้อง import ซ้ำ
+- ✅ Performance ดีขึ้น (load font ครั้งเดียว)
+- ✅ Code สะอาดและ maintainable มากขึ้น
+
+---
+
+### Step 8.3: Update Navigation with Semantic HTML
+
+**File:** `components/navigation.tsx`
+
+ใช้ `<ul><li>` tags สำหรับ navigation menu เพื่อ semantic HTML:
+
+```tsx
+{currentUser ? (
+  <>
+    <span className="text-sm">
+      Hi, {currentUser.displayName || currentUser.email}
+    </span>
+    <p> | </p>
+    <button
+      onClick={handleLogout}
+      className="text-sm hover:underline"
+    >
+      Logout
+    </button>
+  </>
+) : (
+  <ul className="flex items-center gap-4">
+    <li>
+      <Link href="/property-stock-search" className="text-sm hover:underline">
+        Property stock search
+      </Link>
+    </li>
+    <li>
+      <span className="text-sm">|</span>
+    </li>
+    <li>
+      <Link href="/login" className="text-sm hover:underline">
+        Login
+      </Link>
+    </li>
+    <li>
+      <span className="text-sm">|</span>
+    </li>
+    <li>
+      <Link href="/register" className="text-sm hover:underline">
+        Register
+      </Link>
+    </li>
+  </ul>
+)}
+```
+
+**Key Points:**
+- ✅ ใช้ `<ul><li>` สำหรับ navigation menu (semantic HTML)
+- ✅ ดีต่อ accessibility และ SEO
+- ✅ ใช้ `flex items-center gap-4` บน `<ul>` เพื่อจัด layout
+- ✅ แต่ละ navigation item อยู่ใน `<li>` tag
+
+**ทำไมต้องใช้ `<ul><li>`:**
+- ✅ **Semantic HTML** - Browser และ screen readers เข้าใจว่าเป็น navigation menu
+- ✅ **Accessibility** - Screen readers สามารถ navigate ได้ดีขึ้น
+- ✅ **SEO** - Search engines เข้าใจโครงสร้างได้ดีขึ้น
+- ✅ **Best Practice** - เป็นมาตรฐานสำหรับ navigation menu
 
 ---
 
