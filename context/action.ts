@@ -23,11 +23,19 @@ export const setToken = async ({
         const userRecord = await auth.getUser(verifiedToken.uid);
         
         // Check if user email is in admin emails list
-        const adminEmails = process.env.ADMIN_EMAILS?.split(",").map(email => email.trim()) || [];
+        const adminEmails = process.env.SYSTEM_ADMIN_EMAILS?.split(",").map(email => email.trim()) || [];
+        
+        
         if (userRecord.email && adminEmails.includes(userRecord.email) && !userRecord.customClaims?.admin) {
+            console.log("✅ Setting admin role for:", userRecord.email);
             await auth.setCustomUserClaims(verifiedToken.uid, {
                 admin: true,
             });
+            
+        } else if (userRecord.email && adminEmails.includes(userRecord.email) && userRecord.customClaims?.admin) {
+            
+        } else {
+            
         }
         const cookieStore = await cookies();
         cookieStore.set("firebase_token", token, {

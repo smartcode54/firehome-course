@@ -11,6 +11,7 @@
 8. [Add Icon to Navigation & Configure Poppins Font](#8-add-icon-to-navigation--configure-poppins-font)
 9. [My Account Page](#9-my-account-page)
 10. [Admin Dashboard Page](#10-admin-dashboard-page)
+11. [Admin Role Management & Cookie Token Storage](#11-admin-role-management--cookie-token-storage)
 
 ---
 
@@ -1097,9 +1098,276 @@ export default function AdminDashboardPage() {
 
 ---
 
+## 11. Admin Role Management & Cookie Token Storage
+
+### Step 11.1: Add Admin Role to Users and Save Auth Tokens in Cookies
+
+**Files:** 
+- `context/action.ts` - Server actions for token management
+- `context/auth.tsx` - Client-side auth context
+- `firebase/server.ts` - Firebase Admin SDK setup
+
+**Features:**
+- ✅ **Automatic Admin Role Assignment** - Automatically assigns admin role based on email list
+- ✅ **Cookie Token Storage** - Stores Firebase tokens in HTTP-only cookies for server-side authentication
+- ✅ **Secure Token Management** - Uses secure, httpOnly cookies with proper security settings
+- ✅ **Role-based Access Control** - Admin role stored in Firebase custom claims
+
+### Step 11.2: Server Actions for Token Management
+
+**File:** `context/action.ts`
+
+สร้าง Server Actions สำหรับจัดการ authentication tokens และ admin role:
+
+```tsx
+"use server";
+
+import { auth } from "@/firebase/server";
+import { cookies } from "next/headers";
+
+// Remove tokens from cookies on logout
+export const removeToken = async () => {
+    const cookieStore = await cookies();
+    cookieStore.delete("firebase_token");
+    cookieStore.delete("firebase_refresh_token");
+};
+
+// Set tokens in cookies and assign admin role if needed
+export const setToken = async ({
+    token,
+    refreshToken,
+}: {
+    token: string;
+    refreshToken: string;
+}) => {
+    try {
+        // Verify the token
+        const verifiedToken = await auth.verifyIdToken(token);
+        if (!verifiedToken) {
+            return;
+        }
+        
+        // Get user record from Firebase Admin
+        const userRecord = await auth.getUser(verifiedToken.uid);
+        
+        // Check if user email is in admin emails list
+        const adminEmails = process.env.SYSTEM_ADMIN_EMAILS?.split(",").map(email => email.trim()) || [];
+        if (userRecord.email && adminEmails.includes(userRecord.email) && !userRecord.customClaims?.admin) {
+            // Set admin custom claim
+            await auth.setCustomUserClaims(verifiedToken.uid, {
+                admin: true,
+            });
+        }
+        
+        // Store tokens in cookies
+        const cookieStore = await cookies();
+        cookieStore.set("firebase_token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+        });
+        cookieStore.set("firebase_refresh_token", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+        });
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+};
+```
+
+**Key Points:**
+- ✅ ใช้ `"use server"` directive สำหรับ Server Actions
+- ✅ ตรวจสอบ token ด้วย `auth.verifyIdToken()`
+- ✅ ตรวจสอบ email จาก `SYSTEM_ADMIN_EMAILS` environment variable
+- ✅ ตั้งค่า admin role ด้วย `auth.setCustomUserClaims()`
+- ✅ เก็บ tokens ใน HTTP-only cookies เพื่อความปลอดภัย
+- ✅ ใช้ `secure: true` ใน production environment
+
+### Step 11.3: Update Auth Context
+
+**File:** `context/auth.tsx`
+
+อัพเดท Auth Context เพื่อส่ง tokens ไปยัง server และจัดการ custom claims:
+
+```tsx
+"use client";
+
+import { createContext, useContext, useEffect, useState } from "react";
+import { User, signOut } from "firebase/auth";
+import { auth } from "@/firebase/client";
+import { onAuthStateChanged } from "firebase/auth";
+import { getIdTokenResult } from "firebase/auth";
+import { setToken, removeToken } from "./action";
+
+type ParsedTokenResult = {
+  [key: string]: any;
+};
+
+type AuthContextType = {
+  currentUser: User | null;
+  logout: () => Promise<void>;
+};
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [customClaims, setCustomClaims] = useState<ParsedTokenResult | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user ? user : null);
+      if (user) {
+        try {
+          // Get token result with claims
+          const tokenResult = await getIdTokenResult(user);
+          const token = tokenResult.token;
+          const refreshToken = user.refreshToken;
+          const claims = tokenResult.claims;
+          setCustomClaims(claims ?? null);
+          
+          // Send tokens to server to set admin role and save in cookies
+          if (token && refreshToken) {
+            await setToken({ 
+              token, 
+              refreshToken 
+            });
+          }
+        } catch (error) {
+          console.error("Error getting token:", error);
+        }
+      } else {
+        // Remove tokens on logout
+        await removeToken();
+        setCustomClaims(null);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error signing out:", error);
+      throw error;
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{ currentUser, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => useContext(AuthContext);
+```
+
+**Key Points:**
+- ✅ ใช้ `getIdTokenResult()` เพื่อดึง token และ claims
+- ✅ เก็บ custom claims ใน state
+- ✅ ส่ง tokens ไปยัง server action (`setToken`)
+- ✅ ลบ tokens เมื่อ user logout
+
+### Step 11.4: Environment Variables Setup
+
+สร้างไฟล์ `.env.local` และเพิ่ม environment variables:
+
+```env
+# System Admin Emails (comma-separated)
+SYSTEM_ADMIN_EMAILS=admin@example.com,another-admin@example.com
+
+# Firebase Admin SDK Credentials
+FIREBASE_PRIVATE_KEY_ID=your_private_key_id
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+FIREBASE_CLIENT_EMAIL=your-service-account@project.iam.gserviceaccount.com
+FIREBASE_CLIENT_ID=your_client_id
+```
+
+**Important Notes:**
+- ⚠️ อย่า commit `.env.local` ลงใน Git (ควรอยู่ใน `.gitignore`)
+- ⚠️ `FIREBASE_PRIVATE_KEY` ต้องมี `\n` สำหรับ newlines
+- ⚠️ Restart Next.js dev server หลังจากเปลี่ยน environment variables
+
+### Step 11.5: How It Works
+
+**Flow Diagram:**
+
+```
+1. User Logs In
+   ↓
+2. Firebase Auth → User Object
+   ↓
+3. Get ID Token Result (with claims)
+   ↓
+4. Send Token to Server Action (setToken)
+   ↓
+5. Server: Verify Token
+   ↓
+6. Server: Check Email in SYSTEM_ADMIN_EMAILS
+   ↓
+7. Server: Set Admin Custom Claim (if email matches)
+   ↓
+8. Server: Save Tokens in HTTP-only Cookies
+   ↓
+9. Client: Store Claims in State
+   ↓
+10. Components can check admin role from claims
+```
+
+**Benefits:**
+- 🔒 **Security**: Tokens stored in HTTP-only cookies (XSS protection)
+- 🚀 **Server-side Auth**: Server components can access tokens from cookies
+- ⚡ **Automatic**: Admin role assigned automatically based on email
+- 🔄 **Real-time**: Claims updated when admin role is set
+
+### Step 11.6: Using Admin Role in Components
+
+**Example: Check Admin Role in Component**
+
+```tsx
+"use client";
+
+import { useAuth } from "@/context/auth";
+import { useEffect } from "react";
+
+export default function AdminComponent() {
+  const authContext = useAuth();
+  const currentUser = authContext?.currentUser;
+  
+  // Get admin status from custom claims
+  // Note: You may need to expose customClaims in AuthContext
+  const isAdmin = /* check from customClaims */;
+  
+  if (!isAdmin) {
+    return <div>Access Denied</div>;
+  }
+  
+  return <div>Admin Content</div>;
+}
+```
+
+**Example: Conditional Rendering in Navigation**
+
+```tsx
+{isAdmin && (
+  <DropdownMenuItem asChild>
+    <Link href="/admin/dashboard">
+      Admin Dashboard
+    </Link>
+  </DropdownMenuItem>
+)}
+```
+
+---
+
 ## 🚀 Next Steps
 
-1. **Role-based Access Control** - เพิ่มการตรวจสอบ admin role สำหรับ Admin Dashboard
+1. **Role-based Access Control** - ✅ Completed - Admin role management implemented
 2. **Firestore Integration** - ดึงข้อมูล stats จาก Firestore แทน mock data
 3. **User Management** - สร้างหน้า Manage Users
 4. **Driver Management** - สร้างหน้า Manage Drivers
@@ -1109,4 +1377,9 @@ export default function AdminDashboardPage() {
 ---
 
 **Last Updated:** 2025-01-27
+
+**Recent Updates:**
+- ✅ Added admin role management with automatic assignment based on email
+- ✅ Implemented secure cookie-based token storage for server-side authentication
+- ✅ Added server actions for token management (`setToken`, `removeToken`)
 

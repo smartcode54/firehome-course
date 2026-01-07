@@ -17,10 +17,9 @@ export default function ContinueWithGoogleButton() {
       
       // Use popup instead of redirect for better UX
       // Popup will be centered by browser automatically
-      const result = await signInWithPopup(auth, provider);
+      await signInWithPopup(auth, provider);
       
-      // User signed in successfully
-      console.log("Signed in:", result.user);
+      // User signed in successfully - redirect to home
       router.push("/");
     } catch (error: any) {
       console.error("Error signing in:", error);

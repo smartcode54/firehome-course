@@ -128,10 +128,21 @@ export default function Navigation() {
                     <span>My Account</span>
                   </Link>
                 </DropdownMenuItem>
+
+                {!! authContext?.customClaims?.admin && (
+
                 <DropdownMenuItem asChild>
                   <Link href="/admin/dashboard" className="flex items-center cursor-pointer">
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     <span>Admin Dashboard</span>
+                  </Link>
+                </DropdownMenuItem>
+                )}
+                
+                <DropdownMenuItem asChild>
+                  <Link href="/my-account" className="flex items-center cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>My Favorite</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
