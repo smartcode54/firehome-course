@@ -9,6 +9,8 @@
 6. [Display User Info in Navbar](#6-display-user-info-in-navbar)
 7. [Dark/Light Mode Toggle](#7-darklight-mode-toggle)
 8. [Add Icon to Navigation & Configure Poppins Font](#8-add-icon-to-navigation--configure-poppins-font)
+9. [My Account Page](#9-my-account-page)
+10. [Admin Dashboard Page](#10-admin-dashboard-page)
 
 ---
 
@@ -963,12 +965,146 @@ useEffect(() => {
 
 ---
 
+---
+
+## 9. My Account Page
+
+### Step 9.1: Create My Account Page
+
+**File:** `app/my-account/page.tsx`
+
+สร้างหน้า My Account สำหรับแสดงข้อมูลผู้ใช้ที่ล็อกอินแล้ว
+
+**Features:**
+- ✅ **Protected Route** - ตรวจสอบ authentication ก่อนเข้าถึง
+- ✅ **User Profile Display** - แสดง Avatar, ชื่อ, อีเมล
+- ✅ **Account Details** - แสดง User ID, Email verification status, Account creation date
+- ✅ **Auto Redirect** - Redirect ไปหน้า login ถ้ายังไม่ล็อกอิน
+
+**Key Implementation:**
+
+```tsx
+"use client";
+
+import { useAuth } from "@/context/auth";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+export default function MyAccountPage() {
+  const authContext = useAuth();
+  const router = useRouter();
+  const currentUser = authContext?.currentUser;
+
+  useEffect(() => {
+    // Redirect to login if not authenticated
+    if (authContext && !currentUser) {
+      router.push("/login");
+    }
+  }, [authContext, currentUser, router]);
+
+  // Show loading/redirecting state
+  if (!authContext || !currentUser) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    // Display user information
+  );
+}
+```
+
+**Key Points:**
+- ✅ ใช้ `useAuth()` จาก Context เพื่อดึงข้อมูลผู้ใช้
+- ✅ ใช้ `useEffect` เพื่อตรวจสอบ authentication และ redirect
+- ✅ แสดง loading state ขณะตรวจสอบ auth
+- ✅ ใช้ `Card` component สำหรับจัดรูปแบบข้อมูล
+- ✅ แสดง Avatar, Display Name, Email, User ID, Email Verification Status
+
+---
+
+## 10. Admin Dashboard Page
+
+### Step 10.1: Create Admin Dashboard Page
+
+**File:** `app/admin/dashboard/page.tsx`
+
+สร้างหน้า Admin Dashboard สำหรับผู้ดูแลระบบ
+
+**Features:**
+- ✅ **Protected Route** - ตรวจสอบ authentication ก่อนเข้าถึง
+- ✅ **Stats Overview** - แสดงสถิติ (Total Users, Drivers, Packages, Active Deliveries)
+- ✅ **Quick Actions** - Cards สำหรับจัดการ Users, Drivers, Packages
+- ✅ **Auto Redirect** - Redirect ไปหน้า login ถ้ายังไม่ล็อกอิน
+- ⚠️ **TODO:** เพิ่ม role-based access control (ตรวจสอบว่าเป็น admin หรือไม่)
+
+**Key Implementation:**
+
+```tsx
+"use client";
+
+import { useAuth } from "@/context/auth";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+export default function AdminDashboardPage() {
+  const authContext = useAuth();
+  const router = useRouter();
+  const currentUser = authContext?.currentUser;
+
+  useEffect(() => {
+    // Redirect to login if not authenticated
+    if (authContext && !currentUser) {
+      router.push("/login");
+    }
+    // TODO: Add admin role check
+    // if (currentUser && !isAdmin(currentUser)) {
+    //   router.push("/");
+    // }
+  }, [authContext, currentUser, router]);
+
+  // Mock stats - replace with Firestore data
+  const stats = {
+    totalUsers: 0,
+    totalDrivers: 0,
+    totalPackages: 0,
+    activeDeliveries: 0,
+  };
+
+  return (
+    // Display dashboard with stats and quick actions
+  );
+}
+```
+
+**Key Points:**
+- ✅ ใช้ `useAuth()` จาก Context เพื่อดึงข้อมูลผู้ใช้
+- ✅ ใช้ `useEffect` เพื่อตรวจสอบ authentication และ redirect
+- ✅ แสดง loading state ขณะตรวจสอบ auth
+- ✅ ใช้ `Card` component สำหรับแสดง stats และ quick actions
+- ⚠️ **TODO:** เพิ่มการตรวจสอบ admin role จาก Firestore
+- ⚠️ **TODO:** ดึงข้อมูล stats จาก Firestore แทน mock data
+
+**Stats Cards:**
+- Total Users - จำนวนผู้ใช้ทั้งหมด
+- Total Drivers - จำนวนคนขับทั้งหมด
+- Total Packages - จำนวนพัสดุทั้งหมด
+- Active Deliveries - จำนวนการจัดส่งที่กำลังดำเนินการ
+
+**Quick Actions:**
+- Manage Users - จัดการผู้ใช้
+- Manage Drivers - จัดการคนขับ
+- Manage Packages - จัดการพัสดุ
+
+---
+
 ## 🚀 Next Steps
 
-1. **Protected Routes** - สร้าง middleware หรือ HOC สำหรับ protect routes
-2. **User Profile** - สร้างหน้า profile สำหรับแสดงและแก้ไขข้อมูลผู้ใช้
-3. **Firestore Integration** - บันทึกข้อมูลผู้ใช้ลง Firestore
-4. **Role-based Access** - เพิ่ม role-based access control
+1. **Role-based Access Control** - เพิ่มการตรวจสอบ admin role สำหรับ Admin Dashboard
+2. **Firestore Integration** - ดึงข้อมูล stats จาก Firestore แทน mock data
+3. **User Management** - สร้างหน้า Manage Users
+4. **Driver Management** - สร้างหน้า Manage Drivers
+5. **Package Management** - สร้างหน้า Manage Packages
+6. **Edit Profile** - เพิ่มฟังก์ชันแก้ไขข้อมูลผู้ใช้ในหน้า My Account
 
 ---
 
