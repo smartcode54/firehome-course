@@ -1,7 +1,9 @@
 // Import the functions you need from the SDKs you need
 import admin from "firebase-admin";
 import { getFirestore, Firestore } from "firebase-admin/firestore";
-import { getApps, initializeApp } from "firebase-admin/app";
+import { getApps} from "firebase-admin/app";
+import { getAuth, Auth } from "firebase-admin/auth";
+
 const serviceAccount = {
   type: "service_account",
   project_id: "fire-home-course-4effe",
@@ -17,18 +19,19 @@ const serviceAccount = {
   universe_domain: "googleapis.com",
 };
 let firestore: Firestore;
+let auth: Auth;
 const currentApps = getApps();
 
 if (!currentApps.length) {
-  const app = initializeApp({
+  const app = admin.initializeApp({
     credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
   });
   firestore = getFirestore(app);
+  auth = getAuth(app);
 } else {
   const app = currentApps[0];
   firestore = getFirestore(app);
+  auth = getAuth(app);
 }
 
-export { firestore };
-
-//error in credential getfirestore
+export { firestore, auth };
