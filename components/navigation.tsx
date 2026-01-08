@@ -29,7 +29,7 @@ export default function Navigation() {
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
-    
+
     setIsDark(shouldBeDark);
     // Apply theme immediately
     const html = document.documentElement;
@@ -43,7 +43,7 @@ export default function Navigation() {
   const toggleTheme = () => {
     const newIsDark = !isDark;
     setIsDark(newIsDark);
-    
+
     const html = document.documentElement;
     if (newIsDark) {
       html.classList.add('dark');
@@ -52,7 +52,7 @@ export default function Navigation() {
       html.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
-    
+
     // Force re-render to update all components
     window.dispatchEvent(new Event('themechange'));
   };
@@ -62,10 +62,10 @@ export default function Navigation() {
     try {
       // ใช้ logout function จาก Context
       await authContext?.logout();
-      
+
       // Redirect ไปหน้า home
       router.push("/");
-      
+
       // Navigation bar จะแสดง "Login | Register" แทน
       // (currentUser จะเป็น null อัตโนมัติจาก onAuthStateChanged)
     } catch (error) {
@@ -77,11 +77,11 @@ export default function Navigation() {
   return (
     <nav className="bg-green-800 text-white p-4">
       <div className="w-full flex items-center justify-between px-4">
-      <Link href="/" className="text-2xl font-semibold flex items-center gap-2 font-poppins">
-        <Flame className="w-5 h-5" />
-          Fire Home
-      </Link>
-        
+        <div className="text-2xl font-semibold flex items-center gap-2 font-poppins">
+          <Flame className="w-5 h-5" />
+          Logi Track
+        </div>
+
         <div className="flex items-center gap-4">
           {/* Dark/Light Mode Toggle */}
           <button
@@ -101,12 +101,12 @@ export default function Navigation() {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer">
                   <Avatar className="w-8 h-8">
-                    <AvatarImage 
-                      src={currentUser.photoURL || undefined} 
-                      alt={currentUser.displayName || currentUser.email || "User"} 
+                    <AvatarImage
+                      src={currentUser.photoURL || undefined}
+                      alt={currentUser.displayName || currentUser.email || "User"}
                     />
                     <AvatarFallback className="bg-white/20 text-white text-xs">
-                      {currentUser.displayName 
+                      {currentUser.displayName
                         ? currentUser.displayName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
                         : currentUser.email?.[0].toUpperCase() || "U"
                       }
@@ -129,16 +129,16 @@ export default function Navigation() {
                   </Link>
                 </DropdownMenuItem>
 
-                {!! authContext?.customClaims?.admin && (
+                {!!authContext?.customClaims?.admin && (
 
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/dashboard" className="flex items-center cursor-pointer">
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    <span>Admin Dashboard</span>
-                  </Link>
-                </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/dashboard" className="flex items-center cursor-pointer">
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      <span>Admin Dashboard</span>
+                    </Link>
+                  </DropdownMenuItem>
                 )}
-                
+
                 <DropdownMenuItem asChild>
                   <Link href="/my-account" className="flex items-center cursor-pointer">
                     <User className="mr-2 h-4 w-4" />
@@ -146,7 +146,7 @@ export default function Navigation() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={handleLogout}
                   className="flex items-center cursor-pointer text-red-600 focus:text-red-600"
                 >
@@ -157,26 +157,26 @@ export default function Navigation() {
             </DropdownMenu>
           ) : (
             <ul className="flex items-center gap-4">
-            <li>
-              <Link href="/property-stock-search" className="text-sm hover:underline">
-                Property stock search
-              </Link>
-            </li>
-            <div className="text-sm">|</div>
-            <li>
-              <Link href="/login" className="text-sm hover:underline">
-                Login
-              </Link>
-            </li>
-            <li>
-              <span className="text-sm">|</span>
-            </li>
-            <li>
-              <Link href="/register" className="text-sm hover:underline">
-                Register
-              </Link>
-            </li>
-          </ul>
+              <li>
+                <Link href="/property-stock-search" className="text-sm hover:underline">
+                  Property stock search
+                </Link>
+              </li>
+              <div className="text-sm">|</div>
+              <li>
+                <Link href="/login" className="text-sm hover:underline">
+                  Login
+                </Link>
+              </li>
+              <li>
+                <span className="text-sm">|</span>
+              </li>
+              <li>
+                <Link href="/register" className="text-sm hover:underline">
+                  Register
+                </Link>
+              </li>
+            </ul>
           )}
         </div>
       </div>

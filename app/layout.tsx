@@ -6,7 +6,7 @@ import { Poppins } from "next/font/google";
 
 const poppins = Poppins({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700" , "800", "900"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fire Home",
+  title: "Logi Track",
   description: "Created by SmartCode",
 };
 

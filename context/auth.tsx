@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
           // Get initial token
           const tokenResult = await getIdTokenResult(user);
+          console.log("tokenResult", tokenResult);
           const token = tokenResult.token;
           const refreshToken = user.refreshToken;
           const claims = tokenResult.claims;
