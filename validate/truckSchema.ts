@@ -27,7 +27,7 @@ export const truckSchema = z.object({
     province: z.string().min(1, "Province is required"),
 
     vin: z.string().length(17, "VIN must be exactly 17 characters"),
-    engineNumber: z.string().length(9, "Engine number is required"),
+    engineNumber: z.string().length(10, "Engine number is required"),
     truckStatus: z.union([
         z.enum(["active", "inactive", "maintenance", "insurance-claim", "sold"]),
         z.literal(""),

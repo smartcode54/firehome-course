@@ -3,6 +3,7 @@ import admin from "firebase-admin";
 import { getFirestore, Firestore } from "firebase-admin/firestore";
 import { getApps} from "firebase-admin/app";
 import { getAuth, Auth } from "firebase-admin/auth";
+import { getStorage, Storage } from "firebase-admin/storage";
 
 // Validate required environment variables for server-side Firebase Admin
 if (!process.env.FIREBASE_PRIVATE_KEY) {
@@ -36,6 +37,7 @@ const serviceAccount = {
 let firestore: Firestore;
 let firestoreTrucks: Firestore; // Separate instance for "trucks" database
 let auth: Auth;
+let storage: Storage;
 const currentApps = getApps();
 
 if (!currentApps.length) {
@@ -43,12 +45,14 @@ if (!currentApps.length) {
     const app = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
       projectId: serviceAccount.project_id,
+      storageBucket: `${serviceAccount.project_id}.firebasestorage.app`,
     });
     // Default database
     firestore = getFirestore(app);
     // "trucks" database
     firestoreTrucks = getFirestore(app, "trucks");
     auth = getAuth(app);
+    storage = getStorage(app);
     
     if (process.env.NODE_ENV === 'development') {
       console.log('✅ Firebase Admin SDK initialized successfully');
@@ -67,6 +71,7 @@ if (!currentApps.length) {
   firestore = getFirestore(app);
   firestoreTrucks = getFirestore(app, "trucks");
   auth = getAuth(app);
+  storage = getStorage(app);
 }
 
-export { firestore, firestoreTrucks, auth };
+export { firestore, firestoreTrucks, auth, storage };

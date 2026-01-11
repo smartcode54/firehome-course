@@ -115,3 +115,75 @@ export async function getTrucks(): Promise<TruckData[]> {
         throw error;
     }
 }
+
+export async function getTruckById(id: string): Promise<TruckData | null> {
+    try {
+        // Verify authentication
+        const cookieStore = await cookies();
+        const token = cookieStore.get("firebase_token")?.value;
+
+        if (!token) {
+            throw new Error("Unauthorized: No authentication token found");
+        }
+
+        // Verify token
+        const verifiedToken = await auth.verifyIdToken(token);
+
+        // Check if user is admin
+        if (verifiedToken.admin !== true) {
+            throw new Error("Forbidden: Admin access required");
+        }
+
+        // Get truck from Firestore
+        const truckRef = firestoreTrucks.collection("trucks").doc(id);
+        const doc = await truckRef.get();
+
+        if (!doc.exists) {
+            return null;
+        }
+
+        const data = doc.data()!;
+
+        // Convert Firestore Timestamp to Date or keep as is
+        const formatTimestamp = (timestamp: any) => {
+            if (!timestamp) return null;
+            if (timestamp.toDate) {
+                return timestamp.toDate();
+            }
+            if (timestamp.toMillis) {
+                return new Date(timestamp.toMillis());
+            }
+            return timestamp;
+        };
+
+        return {
+            id: doc.id,
+            licensePlate: data.licensePlate || "",
+            province: data.province || "",
+            vin: data.vin || "",
+            engineNumber: data.engineNumber || "",
+            truckStatus: data.truckStatus || "",
+            brand: data.brand || "",
+            model: data.model || "",
+            year: data.year || "",
+            color: data.color || "",
+            type: data.type || "",
+            seats: data.seats || "",
+            fuelType: data.fuelType || "",
+            engineCapacity: data.engineCapacity,
+            fuelCapacity: data.fuelCapacity,
+            maxLoadWeight: data.maxLoadWeight,
+            registrationDate: data.registrationDate || "",
+            buyingDate: data.buyingDate || "",
+            driver: data.driver || "",
+            notes: data.notes || "",
+            images: data.images || [],
+            createdBy: data.createdBy || "",
+            createdAt: formatTimestamp(data.createdAt),
+            updatedAt: formatTimestamp(data.updatedAt),
+        };
+    } catch (error) {
+        console.error("Error fetching truck:", error);
+        throw error;
+    }
+}

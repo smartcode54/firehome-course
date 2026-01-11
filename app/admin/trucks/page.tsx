@@ -10,7 +10,14 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
-import { Truck, Home, LayoutDashboard, Plus, Search, MoreHorizontal, Loader2 } from "lucide-react";
+import { Truck, Home, LayoutDashboard, Plus, Search, MoreHorizontal, Loader2, Eye, Edit, Wrench } from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/context/language";
@@ -195,9 +202,33 @@ export default function TrucksListPage() {
                                     <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(truck.truckStatus)}`}>
                                         {getStatusLabel(truck.truckStatus)}
                                     </span>
-                                    <button className="p-2 hover:bg-accent rounded-md transition-colors">
-                                        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                                    </button>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                                <span className="sr-only">Open menu</span>
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuItem asChild>
+                                                <Link href={`/admin/trucks/${truck.id}`} className="flex items-center cursor-pointer">
+                                                    <Eye className="mr-2 h-4 w-4" />
+                                                    Preview
+                                                </Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem asChild>
+                                                <Link href={`/admin/trucks/${truck.id}/edit`} className="flex items-center cursor-pointer">
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    Update
+                                                </Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem className="cursor-pointer">
+                                                <Wrench className="mr-2 h-4 w-4" />
+                                                Maintenance
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
                             </div>
                         ))}
@@ -212,7 +243,7 @@ export default function TrucksListPage() {
                             {searchQuery ? "No trucks found" : t("trucks.noTrucks") || "No trucks yet"}
                         </h3>
                         <p className="text-muted-foreground mb-4">
-                            {searchQuery 
+                            {searchQuery
                                 ? "Try adjusting your search query"
                                 : t("trucks.getStarted") || "Get started by adding your first truck"
                             }
