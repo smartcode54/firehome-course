@@ -1,143 +1,124 @@
 "use client";
 
-import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useLanguage } from "@/context/language";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Camera, X, Loader2, ImagePlus } from "lucide-react";
-import Image from "next/image";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "@/firebase/client";
+import { Camera, FileText } from "lucide-react";
 import { TruckFormValues } from "@/validate/truckSchema";
+import TruckFileUploader from "./TruckFileUploader";
 
-export function PhotosSection() {
+interface PhotosSectionProps {
+    onFileSelect?: (field: keyof TruckFormValues, file: File, blobUrl: string) => void;
+}
+
+export function PhotosSection({ onFileSelect }: PhotosSectionProps) {
     const { t } = useLanguage();
     const { watch, setValue, formState: { errors } } = useFormContext<TruckFormValues>();
-    const [isUploading, setIsUploading] = useState(false);
 
-    // Watch images array
-    const images = watch("images") || [];
-
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || e.target.files.length === 0) return;
-
-        const file = e.target.files[0];
-
-        // Basic validation
-        if (!file.type.startsWith("image/")) {
-            alert("Please upload an image file");
-            return;
-        }
-
-        // max 5MB
-        if (file.size > 5 * 1024 * 1024) {
-            alert("File size must be less than 5MB");
-            return;
-        }
-
-        try {
-            setIsUploading(true);
-
-            // Create reference: trucks/{timestamp}_{filename}
-            const filename = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
-            const storageRef = ref(storage, `trucks/${filename}`);
-
-            // Upload
-            const snapshot = await uploadBytes(storageRef, file);
-
-            // Get URL
-            const url = await getDownloadURL(snapshot.ref);
-
-            // Add to form
-            setValue("images", [...images, url], {
-                shouldValidate: true,
-                shouldDirty: true,
-                shouldTouch: true
-            });
-
-        } catch (error) {
-            console.error("Error uploading image:", error);
-            alert("Failed to upload image. Please try again.");
-        } finally {
-            setIsUploading(false);
-            // Reset input
-            e.target.value = "";
-        }
+    // Helper to handle single file upload
+    const handleUpload = (field: keyof TruckFormValues) => (url: string) => {
+        setValue(field, url, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
     };
 
-    const removeImage = (indexToRemove: number) => {
-        const newImages = images.filter((_, index) => index !== indexToRemove);
-        setValue("images", newImages, {
-            shouldValidate: true,
-            shouldDirty: true,
-            shouldTouch: true
-        });
+    const handleRemove = (field: keyof TruckFormValues) => () => {
+        setValue(field, "", { shouldValidate: true, shouldDirty: true, shouldTouch: true });
     };
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Camera className="h-5 w-5 text-primary" />
-                    Truck Photos
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {/* Existing Images */}
-                    {images.map((url, index) => (
-                        <div key={index} className="relative aspect-video rounded-md overflow-hidden border group">
-                            <Image
-                                src={url}
-                                alt={`Truck photo ${index + 1}`}
-                                fill
-                                className="object-cover"
+        <div className="space-y-6">
+            {/* Truck Photos */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Camera className="h-5 w-5 text-primary" />
+                        Truck Photos (Required)
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <TruckFileUploader
+                                label="Front-Right View *"
+                                folder="photos/front-right"
+                                currentUrls={watch("imageFrontRight") ? [watch("imageFrontRight") as string] : []}
+                                onUploadComplete={handleUpload("imageFrontRight")}
+                                onRemove={handleRemove("imageFrontRight")}
+                                onFileSelect={onFileSelect ? ((file, blobUrl) => onFileSelect("imageFrontRight", file, blobUrl)) : undefined}
                             />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Button
-                                    variant="destructive"
-                                    size="icon"
-                                    onClick={() => removeImage(index)}
-                                    type="button"
-                                >
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </div>
+                            {errors.imageFrontRight && <p className="text-sm text-destructive">{errors.imageFrontRight.message}</p>}
                         </div>
-                    ))}
-
-                    {/* Upload Button */}
-                    <div className="relative aspect-video flex flex-col items-center justify-center border-2 border-dashed rounded-md hover:bg-muted/50 transition-colors cursor-pointer">
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleFileChange}
-                            disabled={isUploading}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                        />
-                        {isUploading ? (
-                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                <Loader2 className="h-8 w-8 animate-spin" />
-                                <span className="text-xs">Uploading...</span>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                <ImagePlus className="h-8 w-8" />
-                                <span className="text-xs font-medium">Add Photo</span>
-                            </div>
-                        )}
+                        <div className="space-y-2">
+                            <TruckFileUploader
+                                label="Front-Left View *"
+                                folder="photos/front-left"
+                                currentUrls={watch("imageFrontLeft") ? [watch("imageFrontLeft") as string] : []}
+                                onUploadComplete={handleUpload("imageFrontLeft")}
+                                onRemove={handleRemove("imageFrontLeft")}
+                                onFileSelect={onFileSelect ? ((file, blobUrl) => onFileSelect("imageFrontLeft", file, blobUrl)) : undefined}
+                            />
+                            {errors.imageFrontLeft && <p className="text-sm text-destructive">{errors.imageFrontLeft.message}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <TruckFileUploader
+                                label="Back-Right View *"
+                                folder="photos/back-right"
+                                currentUrls={watch("imageBackRight") ? [watch("imageBackRight") as string] : []}
+                                onUploadComplete={handleUpload("imageBackRight")}
+                                onRemove={handleRemove("imageBackRight")}
+                                onFileSelect={onFileSelect ? ((file, blobUrl) => onFileSelect("imageBackRight", file, blobUrl)) : undefined}
+                            />
+                            {errors.imageBackRight && <p className="text-sm text-destructive">{errors.imageBackRight.message}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <TruckFileUploader
+                                label="Back-Left View *"
+                                folder="photos/back-left"
+                                currentUrls={watch("imageBackLeft") ? [watch("imageBackLeft") as string] : []}
+                                onUploadComplete={handleUpload("imageBackLeft")}
+                                onRemove={handleRemove("imageBackLeft")}
+                                onFileSelect={onFileSelect ? ((file, blobUrl) => onFileSelect("imageBackLeft", file, blobUrl)) : undefined}
+                            />
+                            {errors.imageBackLeft && <p className="text-sm text-destructive">{errors.imageBackLeft.message}</p>}
+                        </div>
                     </div>
-                </div>
+                </CardContent>
+            </Card>
 
-                {errors.images && (
-                    <p className="text-sm font-medium text-destructive">
-                        {errors.images.message}
-                    </p>
-                )}
-            </CardContent>
-        </Card>
+            {/* Truck Documents */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-primary" />
+                        Truck Documents (Required)
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <TruckFileUploader
+                                label="Tax Document *"
+                                folder="documents/tax"
+                                currentUrls={watch("documentTax") ? [watch("documentTax") as string] : []}
+                                onUploadComplete={handleUpload("documentTax")}
+                                onRemove={handleRemove("documentTax")}
+                                onFileSelect={onFileSelect ? ((file, blobUrl) => onFileSelect("documentTax", file, blobUrl)) : undefined}
+                            />
+                            {errors.documentTax && <p className="text-sm text-destructive">{errors.documentTax.message}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <TruckFileUploader
+                                label="Truck Register Document *"
+                                folder="documents/register"
+                                currentUrls={watch("documentRegister") ? [watch("documentRegister") as string] : []}
+                                onUploadComplete={handleUpload("documentRegister")}
+                                onRemove={handleRemove("documentRegister")}
+                                onFileSelect={onFileSelect ? ((file, blobUrl) => onFileSelect("documentRegister", file, blobUrl)) : undefined}
+                            />
+                            {errors.documentRegister && <p className="text-sm text-destructive">{errors.documentRegister.message}</p>}
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
     );
 }

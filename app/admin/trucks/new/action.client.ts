@@ -1,7 +1,31 @@
-import { db } from "@/firebase/client";
-import { collection, doc, addDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { db, storage } from "@/firebase/client"; // Added storage
+import { collection, doc, addDoc, updateDoc, serverTimestamp, query, where, getDocs, limit } from "firebase/firestore";
 import { truckSchema } from "@/validate/truckSchema";
 import * as z from "zod";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
+export const uploadTruckFile = async (file: File, path: string): Promise<string> => {
+    try {
+        const storageRef = ref(storage, path);
+        const snapshot = await uploadBytes(storageRef, file);
+        return await getDownloadURL(snapshot.ref);
+    } catch (error) {
+        console.error("Error uploading file:", error);
+        throw error;
+    }
+};
+
+export const checkLicensePlateExists = async (licensePlate: string): Promise<boolean> => {
+    try {
+        const trucksRef = collection(db, "trucks");
+        const q = query(trucksRef, where("licensePlate", "==", licensePlate), limit(1));
+        const querySnapshot = await getDocs(q);
+        return !querySnapshot.empty;
+    } catch (error) {
+        console.error("Error checking license plate:", error);
+        throw error;
+    }
+};
 
 export const saveNewTruckToFirestoreClient = async (
     data: z.infer<typeof truckSchema>,

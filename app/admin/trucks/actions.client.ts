@@ -3,6 +3,10 @@ import { collection, doc, getDoc, getDocs, query, orderBy } from "firebase/fires
 
 export interface TruckData {
     id: string;
+    // Ownership
+    ownershipType: "own" | "subcontractor";
+    subcontractorId?: string;
+
     licensePlate: string;
     province: string;
     vin: string;
@@ -22,7 +26,28 @@ export interface TruckData {
     buyingDate: string;
     driver: string;
     notes?: string;
+    // Images
+    imageFrontRight?: string;
+    imageFrontLeft?: string;
+    imageBackRight?: string;
+    imageBackLeft?: string;
+    // Documents
+    documentTax?: string;
+    documentRegister?: string;
+
+    // Legacy images array (keep for backward compatibility if needed, or remove)
     images?: string[];
+
+    // Insurance
+    insurancePolicyId?: string;
+    insurancePolicyNumber?: string;
+    insuranceCompany?: string;
+    insuranceType?: string;
+    insuranceStartDate?: string;
+    insuranceExpiryDate?: string;
+    insurancePremium?: number;
+    insuranceDocuments?: string[];
+    insuranceNotes?: string;
     createdBy: string;
     createdAt: Date | null;
     updatedAt: Date | null;
@@ -54,9 +79,11 @@ export async function getTrucksClient(): Promise<TruckData[]> {
 
         snapshot.forEach((doc) => {
             const data = doc.data();
-            
+
             trucks.push({
                 id: doc.id,
+                ownershipType: (data.ownershipType as "own" | "subcontractor") || "own",
+                subcontractorId: data.subcontractorId || undefined,
                 licensePlate: data.licensePlate || "",
                 province: data.province || "",
                 vin: data.vin || "",
@@ -76,7 +103,28 @@ export async function getTrucksClient(): Promise<TruckData[]> {
                 buyingDate: data.buyingDate || "",
                 driver: data.driver || "",
                 notes: data.notes || "",
+
+                // New Fields
+                imageFrontRight: data.imageFrontRight || "",
+                imageFrontLeft: data.imageFrontLeft || "",
+                imageBackRight: data.imageBackRight || "",
+                imageBackLeft: data.imageBackLeft || "",
+                documentTax: data.documentTax || "",
+                documentRegister: data.documentRegister || "",
+
                 images: data.images || [],
+
+                // Insurance
+                insurancePolicyId: data.insurancePolicyId || "",
+                insurancePolicyNumber: data.insurancePolicyNumber || "",
+                insuranceCompany: data.insuranceCompany || "",
+                insuranceType: data.insuranceType || "",
+                insuranceStartDate: data.insuranceStartDate || "",
+                insuranceExpiryDate: data.insuranceExpiryDate || "",
+                insurancePremium: data.insurancePremium,
+                insuranceDocuments: data.insuranceDocuments || [],
+                insuranceNotes: data.insuranceNotes || "",
+
                 createdBy: data.createdBy || "",
                 createdAt: formatTimestamp(data.createdAt),
                 updatedAt: formatTimestamp(data.updatedAt),
@@ -104,6 +152,8 @@ export async function getTruckByIdClient(id: string): Promise<TruckData | null> 
 
         return {
             id: docSnap.id,
+            ownershipType: (data.ownershipType as "own" | "subcontractor") || "own",
+            subcontractorId: data.subcontractorId || undefined,
             licensePlate: data.licensePlate || "",
             province: data.province || "",
             vin: data.vin || "",
@@ -123,7 +173,28 @@ export async function getTruckByIdClient(id: string): Promise<TruckData | null> 
             buyingDate: data.buyingDate || "",
             driver: data.driver || "",
             notes: data.notes || "",
+
+            // New Fields
+            imageFrontRight: data.imageFrontRight || "",
+            imageFrontLeft: data.imageFrontLeft || "",
+            imageBackRight: data.imageBackRight || "",
+            imageBackLeft: data.imageBackLeft || "",
+            documentTax: data.documentTax || "",
+            documentRegister: data.documentRegister || "",
+
             images: data.images || [],
+
+            // Insurance
+            insurancePolicyId: data.insurancePolicyId || "",
+            insurancePolicyNumber: data.insurancePolicyNumber || "",
+            insuranceCompany: data.insuranceCompany || "",
+            insuranceType: data.insuranceType || "",
+            insuranceStartDate: data.insuranceStartDate || "",
+            insuranceExpiryDate: data.insuranceExpiryDate || "",
+            insurancePremium: data.insurancePremium,
+            insuranceDocuments: data.insuranceDocuments || [],
+            insuranceNotes: data.insuranceNotes || "",
+
             createdBy: data.createdBy || "",
             createdAt: formatTimestamp(data.createdAt),
             updatedAt: formatTimestamp(data.updatedAt),

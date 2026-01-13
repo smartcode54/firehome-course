@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/auth";
 import { LanguageProvider } from "@/context/language";
 import { Poppins } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -56,6 +57,7 @@ export default function RootLayout({
         <AuthProvider>
           <LanguageProvider>
             {children}
+            <Toaster />
           </LanguageProvider>
         </AuthProvider>
       </body>

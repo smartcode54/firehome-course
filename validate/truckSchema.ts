@@ -22,18 +22,22 @@ const optionalNumber = (min: number, max: number, label: string) =>
 
 // Truck form validation schema
 export const truckSchema = z.object({
+    // Truck Ownership
+    ownershipType: z.enum(["own", "subcontractor"]).default("own"),
+    subcontractorId: z.string().optional(), // Required if ownershipType is 'subcontractor'
+
     //validate truck identification
     //validate truck identification
     licensePlate: z.string()
-        .min(1, "License plate is required")
+        .min(6, "License plate is required")
         .regex(
-            /^([ก-ฮ]{2}|[0-9][ก-ฮ]{2})-\d{1,4}$/,
+            /^([ก-ฮ]{2}|[0-9][ก-ฮ]{2})-?\d{1,4}$/,
             "License plate must be in format xx-xxxx or xxx-xxxx (e.g., กก-1234 or 1กก-1234)"
         ),
     province: z.string().min(1, "Province is required"),
 
-    vin: z.string().length(17, "VIN must be exactly 17 characters"),
-    engineNumber: z.string().length(10, "Engine number is required"),
+    vin: z.string().length(17, "VIN must be exactly 17 characters").optional().or(z.literal("")), // Made optional for subcontractors
+    engineNumber: z.string().length(9, "Engine number is required").optional().or(z.literal("")), // Made optional for subcontractors
     truckStatus: z.union([
         z.enum(["active", "inactive", "maintenance", "insurance-claim", "sold"]),
         z.literal(""),
@@ -53,11 +57,30 @@ export const truckSchema = z.object({
     fuelCapacity: optionalNumber(0, 1000, "Fuel capacity"),
     maxLoadWeight: optionalNumber(0, 100000, "Max load weight"),
     //validate truck registration and driver assignment
-    registrationDate: z.string().min(1, "Registration date is required"),
-    buyingDate: z.string().min(1, "Buying date is required"),
-    driver: z.string().min(1, "Driver is required"),
+    registrationDate: z.string().optional(), // Optional for Subcontractors
+    buyingDate: z.string().optional(), // Optional for Subcontractors
+    driver: z.string().min(1, "Driver is required").optional().or(z.literal("")), // Optional for Subcon setup (can be assigned later)
     notes: z.string().optional(),
-    images: z.array(z.string()).optional(),
+    // Images (Required)
+    imageFrontRight: z.string().min(1, "Front-Right image is required"),
+    imageFrontLeft: z.string().min(1, "Front-Left image is required"),
+    imageBackRight: z.string().min(1, "Back-Right image is required"),
+    imageBackLeft: z.string().min(1, "Back-Left image is required"),
+
+    // Documents (Required)
+    documentTax: z.string().min(1, "Tax document is required"),
+    documentRegister: z.string().min(1, "Registration document is required"),
+
+    // Insurance Information (Optional)
+    insurancePolicyId: z.string().optional(), // maps to policy_id
+    insurancePolicyNumber: z.string().optional(), // maps to policy_number
+    insuranceCompany: z.string().optional(), // maps to provider
+    insuranceType: z.enum(["1", "2", "2+", "3", "3+"]).or(z.literal("")).optional(), // maps to coverage_type
+    insuranceStartDate: z.string().optional(), // maps to start_date
+    insuranceExpiryDate: z.string().optional(), // maps to end_date
+    insurancePremium: optionalNumber(0, 1000000, "Premium"), // maps to premium
+    insuranceDocuments: z.array(z.string()).optional(), // maps to documents
+    insuranceNotes: z.string().optional(), // maps to notes
 });
 
 // Type inference from schema - use input type for form values
@@ -68,6 +91,8 @@ export type TruckValidatedData = z.infer<typeof truckSchema>;
 
 // Default values for the form
 export const truckDefaultValues: TruckFormValues = {
+    ownershipType: "own",
+    subcontractorId: "",
     licensePlate: "",
     province: "",
 
@@ -88,5 +113,23 @@ export const truckDefaultValues: TruckFormValues = {
     buyingDate: "",
     driver: "",
     notes: "",
-    images: [],
+    // Insurance
+    insurancePolicyId: "",
+    insurancePolicyNumber: "",
+    insuranceCompany: "",
+    insuranceType: "",
+    insuranceStartDate: "",
+    insuranceExpiryDate: "",
+    insurancePremium: undefined,
+    insuranceDocuments: [],
+    insuranceNotes: "",
+
+    // Images
+    imageFrontRight: "",
+    imageFrontLeft: "",
+    imageBackRight: "",
+    imageBackLeft: "",
+    // Documents
+    documentTax: "",
+    documentRegister: "",
 };

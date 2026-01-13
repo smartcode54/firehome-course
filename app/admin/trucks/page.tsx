@@ -26,10 +26,11 @@ import { useLanguage } from "@/context/language";
 import { TruckData } from "./actions.client";
 import { formatLicensePlate } from "@/lib/utils";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function TrucksListPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { t } = useLanguage();
     const [trucks, setTrucks] = useState<TruckData[]>([]);
     const [loading, setLoading] = useState(true);
@@ -44,8 +45,10 @@ export default function TrucksListPage() {
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const trucksData: TruckData[] = [];
+            console.log("Fetched trucks snapshot size:", snapshot.size);
             snapshot.forEach((doc) => {
                 const data = doc.data();
+                // console.log("Truck Doc Data:", data); // Validating raw data
                 // Helper to format timestamp
                 const formatTimestamp = (timestamp: any): Date | null => {
                     if (!timestamp) return null;
@@ -57,6 +60,8 @@ export default function TrucksListPage() {
 
                 trucksData.push({
                     id: doc.id,
+                    ownershipType: (data.ownershipType as "own" | "subcontractor") || "own",
+                    subcontractorId: data.subcontractorId || undefined,
                     licensePlate: data.licensePlate || "",
                     province: data.province || "",
                     vin: data.vin || "",
@@ -95,8 +100,15 @@ export default function TrucksListPage() {
         return () => unsubscribe();
     }, []);
 
-    // Filter trucks based on search query
+    // Filter trucks based on search query AND ownership view
+    const view = searchParams.get("view") || "own";
+
     const filteredTrucks = trucks.filter((truck) => {
+        // 1. Filter by View (Ownership)
+        if (view === "own" && truck.ownershipType === "subcontractor") return false;
+        if (view === "subcontractor" && truck.ownershipType !== "subcontractor") return false;
+
+        // 2. Filter by Search Query
         if (!searchQuery) return true;
         const query = searchQuery.toLowerCase();
         return (
@@ -210,6 +222,49 @@ export default function TrucksListPage() {
                         <p className="text-sm font-medium">{error}</p>
                     </div>
                 )}
+
+                {/* Tabs for Separation */}
+                <div className="flex gap-4 mb-6 border-b">
+                    <button
+                        onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString());
+                            params.set("view", "own");
+                            router.push(`?${params.toString()}`);
+                        }}
+                        className={`pb-2 px-4 text-sm font-medium border-b-2 transition-colors ${view === "own"
+                            ? "border-primary text-primary"
+                            : "border-transparent text-muted-foreground hover:text-foreground"
+                            }`}
+                    >
+                        Own Fleet
+                    </button>
+                    <button
+                        onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString());
+                            params.set("view", "subcontractor");
+                            router.push(`?${params.toString()}`);
+                        }}
+                        className={`pb-2 px-4 text-sm font-medium border-b-2 transition-colors ${view === "subcontractor"
+                            ? "border-primary text-primary"
+                            : "border-transparent text-muted-foreground hover:text-foreground"
+                            }`}
+                    >
+                        Subcontractor Trucks
+                    </button>
+                    <button
+                        onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString());
+                            params.set("view", "all");
+                            router.push(`?${params.toString()}`);
+                        }}
+                        className={`pb-2 px-4 text-sm font-medium border-b-2 transition-colors ${view === "all"
+                            ? "border-primary text-primary"
+                            : "border-transparent text-muted-foreground hover:text-foreground"
+                            }`}
+                    >
+                        All Trucks
+                    </button>
+                </div>
 
                 {/* Loading State */}
                 {loading && (
