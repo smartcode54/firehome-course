@@ -25,6 +25,7 @@ import { IdentificationSection } from "../../new/components/IdentificationSectio
 import { VehicleDetailsSection } from "../../new/components/VehicleDetailsSection";
 import { RegistrationSection } from "../../new/components/RegistrationSection";
 import { EngineInformationSection } from "../../new/components/EngineCapacitySection";
+import { PhotosSection } from "../../new/components/PhotosSection";
 import { updateTruckInFirestoreClient } from "../../new/action.client";
 import { getTruckByIdClient } from "../../actions.client";
 
@@ -104,7 +105,11 @@ export default function EditTruckClient() {
                     notes: truck.notes || "",
                 });
 
-                // Handle existing images - REMOVED
+                // Handle existing images
+                if (truck.images && truck.images.length > 0) {
+                    form.setValue("images", truck.images);
+                }
+
             } catch (err) {
                 console.error("Error fetching truck:", err);
                 setError(err instanceof Error ? err.message : "Failed to load truck data.");
@@ -220,8 +225,7 @@ export default function EditTruckClient() {
                         <VehicleDetailsSection />
                         <EngineInformationSection />
                         <RegistrationSection />
-                        <RegistrationSection />
-                        {/* PhotosSection removed per user request */}
+                        <PhotosSection />
 
                         <div className="flex justify-end gap-4">
                             <Button type="button" variant="outline" asChild>

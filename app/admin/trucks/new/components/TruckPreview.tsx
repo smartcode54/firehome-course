@@ -1,10 +1,9 @@
-"use client";
-
 import { z } from "zod";
 import { truckSchema } from "@/validate/truckSchema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Check, X } from "lucide-react";
+import Image from "next/image";
+import { Edit, Check, X, FileText } from "lucide-react";
 import { useLanguage } from "@/context/language";
 import { formatLicensePlate } from "@/lib/utils";
 
@@ -168,6 +167,29 @@ export function TruckPreview({
                     )}
                 </CardContent>
             </Card>
+            {/* Action Buttons */}
+            {data.images && data.images.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <FileText className="h-5 w-5 text-primary" />
+                            Images
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {data.images.map((img, index) => (
+                            <div key={index} className="relative aspect-video rounded-md overflow-hidden border">
+                                <Image
+                                    src={img}
+                                    alt={`Truck image ${index + 1}`}
+                                    fill
+                                    className="object-cover"
+                                />
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Action Buttons */}
             <div className="flex justify-end gap-4 pt-4 border-t">

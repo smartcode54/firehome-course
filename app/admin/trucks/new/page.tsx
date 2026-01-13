@@ -26,6 +26,7 @@ import { IdentificationSection } from "./components/IdentificationSection";
 import { VehicleDetailsSection } from "./components/VehicleDetailsSection";
 import { RegistrationSection } from "./components/RegistrationSection";
 import { EngineInformationSection } from "./components/EngineCapacitySection";
+import { PhotosSection } from "./components/PhotosSection";
 import { TruckPreview } from "./components/TruckPreview";
 import { saveNewTruckToFirestoreClient } from "./action.client";
 
@@ -178,7 +179,7 @@ export default function CreateTruckPage() {
                             <VehicleDetailsSection />
                             <EngineInformationSection />
                             <RegistrationSection />
-                            {/* PhotosSection removed per user request */}
+                            <PhotosSection />
 
                             <div className="flex justify-end gap-4">
                                 <Button type="button" variant="outline" asChild>

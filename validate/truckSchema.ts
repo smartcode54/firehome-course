@@ -2,7 +2,7 @@ import * as z from "zod";
 
 // Helper for optional numeric fields to handle empty strings
 // Use union + transform instead of preprocess for better type safety
-const optionalNumber = (min: number, max: number, label: string) => 
+const optionalNumber = (min: number, max: number, label: string) =>
     z.union([z.string(), z.number(), z.undefined()])
         .transform((val) => {
             if (val === "" || val === null || val === undefined) return undefined;
@@ -51,6 +51,7 @@ export const truckSchema = z.object({
     buyingDate: z.string().min(1, "Buying date is required"),
     driver: z.string().min(1, "Driver is required"),
     notes: z.string().optional(),
+    images: z.array(z.string()).optional(),
 });
 
 // Type inference from schema - use input type for form values
@@ -81,4 +82,5 @@ export const truckDefaultValues: TruckFormValues = {
     buyingDate: "",
     driver: "",
     notes: "",
+    images: [],
 };
