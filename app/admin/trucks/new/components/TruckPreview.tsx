@@ -150,15 +150,15 @@ export function TruckPreview({
                     </div>
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">Engine Capacity (cc)</p>
-                        <p className="text-base font-semibold">{formatNumber(parseInt(data.engineCapacity + ""))}</p>
+                        <p className="text-base font-semibold">{formatNumber(data.engineCapacity)}</p>
                     </div>
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">Fuel Capacity (L)</p>
-                        <p className="text-base font-semibold">{formatNumber(parseInt(data.fuelCapacity + ""))}</p>
+                        <p className="text-base font-semibold">{formatNumber(data.fuelCapacity)}</p>
                     </div>
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">Max Load Weight (kg)</p>
-                        <p className="text-base font-semibold">{formatNumber(parseInt(data.maxLoadWeight + ""))}</p>
+                        <p className="text-base font-semibold">{formatNumber(data.maxLoadWeight)}</p>
                     </div>
                 </CardContent>
             </Card>

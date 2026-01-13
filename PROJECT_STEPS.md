@@ -18,6 +18,7 @@
 15. [Add New Truck Page](#15-add-new-truck-page)
 16. [Truck List Dropdown Menu](#16-truck-list-dropdown-menu)
 17. [Update Truck Data](#17-update-truck-data)
+18. [Deferred Image Upload & Optimization](#18-deferred-image-upload--optimization)
 
 ---
 
@@ -2049,8 +2050,101 @@ export const saveNewTruckToFirestoreClient = async (
 - `handleConfirmSave` executes the actual save transaction
 
 **File:** `app/admin/trucks/new/components/TruckPreview.tsx`
-- Used in both "Create" (preview mode) and "Truck Details" (read-only)
 - Cleaned up to show only relevant data (removed images per Section 16)
+
+### Step 15.4: Truck Ownership & Subcontractor Support
+**File:** `app/admin/trucks/new/page.tsx`
+- Added **Ownership Section** to toggle between "Own Fleet" and "Subcontractor".
+- Created `SubcontractorSelector` component to fetch and select active subcontractors.
+
+```tsx
+// validate/truckSchema.ts
+export const truckSchema = z.object({
+    ownershipType: z.enum(["own", "subcontractor"]).default("own"),
+    subcontractorId: z.string().optional(),
+    
+    // ... other fields ...
+
+    // Validation refinments: make fields optional for subcontractors
+    vin: z.string().length(17).optional().or(z.literal("")),
+    engineNumber: z.string().length(9).optional().or(z.literal("")),
+    registrationDate: z.string().optional(),
+    buyingDate: z.string().optional(),
+});
+```
+
+```tsx
+// Subcontractor Selector Component
+function SubcontractorSelector({ value, onChange }: { value?: string, onChange: (val: string) => void }) {
+    const [subs, setSubs] = useState<any[]>([]);
+
+    useEffect(() => {
+        getSubcontractors().then(setSubs);
+    }, []);
+
+    return (
+        <Select onValueChange={onChange} value={value || ""}>
+            <FormControl>
+                <SelectTrigger>
+                    <SelectValue placeholder="Select a subcontractor" />
+                </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+                {subs.map(sub => (
+                    <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    );
+}
+```
+
+### Step 15.5: Deferred Image Upload Implementation
+**Files:** `app/admin/trucks/new/page.tsx`, `components/TruckFileUploader.tsx`
+
+**1. Update `TruckFileUploader.tsx` to handle local preview:**
+```tsx
+const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    const file = e.target.files[0];
+
+    // If onFileSelect is provided, we skip immediate upload
+    if (onFileSelect) {
+        const blobUrl = URL.createObjectURL(file);
+        onFileSelect(file, blobUrl);
+        onUploadComplete(blobUrl);
+        e.target.value = "";
+        return;
+    }
+
+    // ... (fallback to immediate upload)
+};
+```
+
+**2. Implement Deferred Save in `CreateTruckPage`:**
+```tsx
+// Store files locally
+const [filesToUpload] = useState<Map<string, File>>(() => new Map());
+
+// Helper to upload if blob exists
+const uploadIfNeeded = async (blobUrl: string | undefined | null, pathPrefix: string): Promise<string | undefined> => {
+    if (!blobUrl || !blobUrl.startsWith("blob:")) return blobUrl || undefined;
+
+    const file = filesToUpload.get(blobUrl);
+    if (!file) return undefined;
+
+    return await uploadTruckFile(file, `trucks/${pathPrefix}/${Date.now()}_${file.name}`);
+};
+
+// In handleConfirmSave:
+// 1. Upload Standard Images
+const imageFields = ['imageFrontRight', 'imageFrontLeft', 'imageBackRight', 'imageBackLeft'] as const;
+for (const field of imageFields) {
+    const url = await uploadIfNeeded(finalData[field], `photos/${field.replace('image', '').toLowerCase()}`);
+    if (url) (finalData as any)[field] = url;
+}
+```
 
 ---
 
@@ -2138,5 +2232,42 @@ export const updateTruckInFirestoreClient = async (
         throw error;
     }
 };
+
+### Step 17.3: Edit Page Enhancements
+**File:** `app/admin/trucks/[id]/edit/EditTruckClient.tsx`
+- **Deferred Uploads**: implemented the same deferred upload logic as the Create page.
+    - Uses `filesToUpload` state to store new files selected during edit.
+    - `onSubmit` handler uploads these files before calling `updateTruckInFirestoreClient`.
+- **Ownership Editing**: Restored `SubcontractorSelector` to allow changing truck ownership type and assigning/reassigning subcontractors.
+- **Form Initialization**: `useEffect` fetches truck data and resets the form, ensuring all fields (including dates and numbers) are correctly formatted for `react-hook-form`.
+
+---
+
+## 18. Deferred Image Upload & Optimization
+
+### Overview
+To improve performance and data integrity, we moved from "upload-on-select" to "upload-on-save".
+
+### Key Components
+1.  **TruckFileUploader**:
+    -   **Old Behavior**: Uploaded to Firebase immediately and returned the download URL.
+    -   **New Behavior**: 
+        -   If `onFileSelect` is present, creates a local `blob:` URL.
+        -   Calls `onFileSelect(file, blobUrl)` to pass data to parent.
+        -   Displays the local blob URL for preview.
+
+2.  **Parent Forms (Create/Edit)**:
+    -   State: `const [filesToUpload] = useState<Map<string, File>>(() => new Map());`
+    -   `handleFileSelect`: Adds file to the map.
+    -   `uploadIfNeeded` helper: Checks if a URL is a blob, looks it up in the map, uploads it, and returns the real Firebase URL.
+
+3.  **Submission Flow**:
+    1.  User fills form and selects images (images shown instantly via blob).
+    2.  User clicks Save/Confirm.
+    3.  Loop through image fields (`imageFrontRight`, `documentTax`, etc.).
+    4.  If field value starts with `blob:`, upload the file from `filesToUpload` and replace the value with the new download URL.
+    5.  Save metadata to Firestore.
+
+This ensures that if a user abandons the form, no useless files are left in Storage.
 ```
 
