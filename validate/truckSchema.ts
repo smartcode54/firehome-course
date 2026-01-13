@@ -23,7 +23,13 @@ const optionalNumber = (min: number, max: number, label: string) =>
 // Truck form validation schema
 export const truckSchema = z.object({
     //validate truck identification
-    licensePlate: z.string().min(1, "License plate is required"),
+    //validate truck identification
+    licensePlate: z.string()
+        .min(1, "License plate is required")
+        .regex(
+            /^([ก-ฮ]{2}|[0-9][ก-ฮ]{2})-\d{1,4}$/,
+            "License plate must be in format xx-xxxx or xxx-xxxx (e.g., กก-1234 or 1กก-1234)"
+        ),
     province: z.string().min(1, "Province is required"),
 
     vin: z.string().length(17, "VIN must be exactly 17 characters"),

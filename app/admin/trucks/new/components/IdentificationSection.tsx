@@ -33,7 +33,16 @@ export function IdentificationSection() {
                         <FormItem>
                             <FormLabel>{t("license Plate")} *</FormLabel>
                             <FormControl>
-                                <Input placeholder="e.g., กข 1234" {...field} />
+                                <Input
+                                    placeholder="e.g., กข-1234"
+                                    maxLength={7}
+                                    {...field}
+                                    onChange={(e) => {
+                                        // Remove English characters (a-z, A-Z) to enforce Thai characters
+                                        const value = e.target.value.replace(/[a-zA-Z]/g, '');
+                                        field.onChange(value);
+                                    }}
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -69,8 +78,13 @@ export function IdentificationSection() {
                             <FormControl>
                                 <Input
                                     placeholder="e.g., 1HGBH41JXMN109186"
+                                    maxLength={17}
                                     {...field}
-                                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                    onChange={(e) => {
+                                        // Remove Thai characters
+                                        const value = e.target.value.toUpperCase().replace(/[\u0E00-\u0E7F]/g, "");
+                                        field.onChange(value);
+                                    }}
                                 />
                             </FormControl>
                             <FormMessage />
@@ -86,8 +100,13 @@ export function IdentificationSection() {
                             <FormControl>
                                 <Input
                                     placeholder="e.g., 4D56-ABC123"
+                                    maxLength={9}
                                     {...field}
-                                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                    onChange={(e) => {
+                                        // Remove Thai characters
+                                        const value = e.target.value.toUpperCase().replace(/[\u0E00-\u0E7F]/g, "");
+                                        field.onChange(value);
+                                    }}
                                 />
                             </FormControl>
                             <FormMessage />

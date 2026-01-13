@@ -26,7 +26,10 @@ import { useLanguage } from "@/context/language";
 import { TruckData } from "./actions.client";
 import { formatLicensePlate } from "@/lib/utils";
 
+import { useRouter } from "next/navigation";
+
 export default function TrucksListPage() {
+    const router = useRouter();
     const { t } = useLanguage();
     const [trucks, setTrucks] = useState<TruckData[]>([]);
     const [loading, setLoading] = useState(true);
@@ -222,7 +225,8 @@ export default function TrucksListPage() {
                         {filteredTrucks.map((truck) => (
                             <div
                                 key={truck.id}
-                                className="group flex items-center justify-between p-4 rounded-lg border border-border bg-card hover:bg-accent hover:border-accent-foreground/20 transition-all duration-200"
+                                onClick={() => router.push(`/admin/trucks/${truck.id}`)}
+                                className="group flex items-center justify-between p-4 rounded-lg border border-border bg-card hover:bg-accent hover:border-accent-foreground/20 transition-all duration-200 cursor-pointer"
                             >
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
@@ -245,7 +249,7 @@ export default function TrucksListPage() {
                                         {getStatusLabel(truck.truckStatus)}
                                     </span>
                                     <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
+                                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                             <Button variant="ghost" className="h-8 w-8 p-0">
                                                 <span className="sr-only">Open menu</span>
                                                 <MoreHorizontal className="h-4 w-4" />
@@ -253,6 +257,13 @@ export default function TrucksListPage() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
+                                            <DropdownMenuItem asChild>
+                                                <Link href={`/admin/trucks/${truck.id}`} className="flex items-center cursor-pointer">
+                                                    <Eye className="mr-2 h-4 w-4" />
+                                                    Preview
+                                                </Link>
+                                            </DropdownMenuItem>
                                             <DropdownMenuItem asChild>
                                                 <Link href={`/admin/trucks/${truck.id}/edit`} className="flex items-center cursor-pointer">
                                                     <Edit className="mr-2 h-4 w-4" />

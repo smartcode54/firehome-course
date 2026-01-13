@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Edit, Truck, Calendar, User, FileText, Info, Loader2 } from "lucide-react";
+import { ArrowLeft, Edit, Truck, Calendar, User, FileText, Info, Loader2, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -224,6 +224,29 @@ export default function TruckPreviewClient() {
                             </CardContent>
                         </Card>
                     )}
+
+                    {truck.images && truck.images.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Camera className="h-5 w-5 text-primary" />
+                                    Truck Photos
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {truck.images.map((img, index) => (
+                                    <div key={index} className="relative aspect-video rounded-md overflow-hidden border">
+                                        <Image
+                                            src={img}
+                                            alt={`Truck image ${index + 1}`}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
 
                 {/* Sidebar Info */}
@@ -275,28 +298,7 @@ export default function TruckPreviewClient() {
                         </CardContent>
                     </Card>
 
-                    {truck.images && truck.images.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <FileText className="h-5 w-5 text-primary" />
-                                    Images
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="grid grid-cols-2 gap-2">
-                                {truck.images.map((img, index) => (
-                                    <div key={index} className="relative aspect-square rounded-md overflow-hidden border">
-                                        <Image
-                                            src={img}
-                                            alt={`Truck image ${index + 1}`}
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    </div>
-                                ))}
-                            </CardContent>
-                        </Card>
-                    )}
+
                 </div>
             </div>
         </div>
