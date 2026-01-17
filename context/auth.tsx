@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { User, signOut } from "firebase/auth";
+import { User, signOut, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/firebase/client";
 import { onAuthStateChanged } from "firebase/auth";
 import { getIdTokenResult, getIdToken } from "firebase/auth";
@@ -14,6 +14,7 @@ type ParsedTokenResult = {
 type AuthContextType = {
   currentUser: User | null;
   logout: () => Promise<void>;
+  login: (email: string, pass: string) => Promise<void>;
   customClaims: ParsedTokenResult | null;
   loading: boolean;
 };
@@ -86,8 +87,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const login = async (email: string, pass: string) => {
+    await signInWithEmailAndPassword(auth, email, pass);
+  };
+
   return (
-    <AuthContext.Provider value={{ currentUser, logout, customClaims, loading }}>
+    <AuthContext.Provider value={{ currentUser, logout, login, customClaims, loading }}>
       {children}
     </AuthContext.Provider>
   );
