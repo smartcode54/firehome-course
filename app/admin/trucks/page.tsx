@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, where, limit } from "firebase/firestore";
 import { db } from "@/firebase/client";
 import {
     Breadcrumb,
@@ -41,14 +41,29 @@ export default function TrucksListPage() {
     useEffect(() => {
         setLoading(true);
         const trucksRef = collection(db, "trucks");
-        const q = query(trucksRef, orderBy("createdAt", "desc"));
+
+        // Optimize: Filter server-side based on view
+        const currentView = searchParams.get("view") || "own";
+        const constraints: any[] = [orderBy("createdAt", "desc")];
+
+        // Apply server-side filtering
+        if (currentView === 'own') {
+            constraints.unshift(where("ownershipType", "==", "own"));
+        } else if (currentView === 'subcontractor') {
+            constraints.unshift(where("ownershipType", "==", "subcontractor"));
+        }
+
+        // Limit initial fetch to 50 for memory optimization
+        // (In a real app, implement infinite scroll)
+        constraints.push(limit(50));
+
+        const q = query(trucksRef, ...constraints);
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const trucksData: TruckData[] = [];
-            console.log("Fetched trucks snapshot size:", snapshot.size);
+            // console.log("Fetched trucks snapshot size:", snapshot.size);
             snapshot.forEach((doc) => {
                 const data = doc.data();
-                // console.log("Truck Doc Data:", data); // Validating raw data
                 // Helper to format timestamp
                 const formatTimestamp = (timestamp: any): Date | null => {
                     if (!timestamp) return null;
@@ -97,7 +112,7 @@ export default function TrucksListPage() {
 
         // Cleanup subscription
         return () => unsubscribe();
-    }, []);
+    }, [searchParams]); // Re-run when view changes
 
     // Filter trucks based on search query AND ownership view
     const view = searchParams.get("view") || "own";
@@ -186,7 +201,7 @@ export default function TrucksListPage() {
                 </Breadcrumb>
 
                 {/* Page Header */}
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
                     <div>
                         <h1 className="text-3xl font-bold text-foreground">
                             {t("trucks.title")}
@@ -222,7 +237,7 @@ export default function TrucksListPage() {
                 )}
 
                 {/* Tabs for Separation */}
-                <div className="flex gap-4 mb-6 border-b">
+                <div className="flex gap-4 mb-6 border-b overflow-x-auto">
                     <button
                         onClick={() => {
                             const params = new URLSearchParams(searchParams.toString());
@@ -234,7 +249,7 @@ export default function TrucksListPage() {
                             : "border-transparent text-muted-foreground hover:text-foreground"
                             }`}
                     >
-                        Own Fleet
+                        {t("trucks.filter.own")}
                     </button>
                     <button
                         onClick={() => {
@@ -247,7 +262,7 @@ export default function TrucksListPage() {
                             : "border-transparent text-muted-foreground hover:text-foreground"
                             }`}
                     >
-                        Subcontractor Trucks
+                        {t("trucks.filter.subcontractor")}
                     </button>
                     <button
                         onClick={() => {
@@ -260,7 +275,7 @@ export default function TrucksListPage() {
                             : "border-transparent text-muted-foreground hover:text-foreground"
                             }`}
                     >
-                        All Trucks
+                        {t("trucks.filter.all")}
                     </button>
                 </div>
 
@@ -279,7 +294,7 @@ export default function TrucksListPage() {
                             <div
                                 key={truck.id}
                                 onClick={() => router.push(`/admin/trucks/${truck.id}`)}
-                                className="group flex items-center justify-between p-4 rounded-lg border border-border bg-card hover:bg-accent hover:border-accent-foreground/20 transition-all duration-200 cursor-pointer"
+                                className="group flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-lg border border-border bg-card hover:bg-accent hover:border-accent-foreground/20 transition-all duration-200 cursor-pointer gap-4"
                             >
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">

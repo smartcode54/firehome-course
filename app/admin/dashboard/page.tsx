@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { collection, getCountFromServer } from "firebase/firestore";
+import { db } from "@/firebase/client";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -19,24 +21,31 @@ import { getTrucksClient } from "../trucks/actions.client";
 export default function AdminDashboardPage() {
   const { t } = useLanguage();
   const [truckCount, setTruckCount] = useState<number>(0);
+  const [userCount, setUserCount] = useState<number>(0);
   const [isTrucksExpanded, setIsTrucksExpanded] = useState(false);
 
-  // Fetch truck count on mount
+  // Fetch counts on mount
   useEffect(() => {
-    const fetchTruckCount = async () => {
+    const fetchCounts = async () => {
       try {
+        // Fetch trucks count
         const trucks = await getTrucksClient();
         setTruckCount(trucks.length);
+
+        // Fetch users count
+        const usersRef = collection(db, "users");
+        const userSnapshot = await getCountFromServer(usersRef);
+        setUserCount(userSnapshot.data().count);
       } catch (error) {
-        console.error("Error fetching truck count:", error);
+        console.error("Error fetching dashboard counts:", error);
       }
     };
-    fetchTruckCount();
+    fetchCounts();
   }, []);
 
   // Mock data - replace with real data from Firestore
   const stats = {
-    totalUsers: 0,
+    totalUsers: userCount,
     totalDrivers: 0,
     totalPackages: 0,
     totalTrucks: truckCount,

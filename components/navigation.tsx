@@ -162,25 +162,6 @@ export default function Navigation() {
             </DropdownMenu>
           ) : (
             <ul className="flex items-center gap-4">
-              <li>
-                <Link href="/property-stock-search" className="text-sm hover:underline">
-                  {t('nav.propertyStockSearch')}
-                </Link>
-              </li>
-              <div className="text-sm">|</div>
-              <li>
-                <Link href="/login" className="text-sm hover:underline">
-                  {t('nav.login')}
-                </Link>
-              </li>
-              <li>
-                <span className="text-sm">|</span>
-              </li>
-              <li>
-                <Link href="/register" className="text-sm hover:underline">
-                  {t('nav.register')}
-                </Link>
-              </li>
             </ul>
           )}
         </div>

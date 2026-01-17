@@ -25,8 +25,10 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { useLanguage } from "@/context/language";
 
 export default function SubcontractorsListPage() {
+    const { t } = useLanguage();
     const router = useRouter(); // Initialize router
     const [subcontractors, setSubcontractors] = useState<SubcontractorData[]>([]);
     const [loading, setLoading] = useState(true);
@@ -86,35 +88,35 @@ export default function SubcontractorsListPage() {
                     <BreadcrumbList>
                         <BreadcrumbItem>
                             <BreadcrumbLink asChild>
-                                <Link href="/admin/dashboard">Dashboard</Link>
+                                <Link href="/admin/dashboard">{t("nav.dashboard")}</Link>
                             </BreadcrumbLink>
                         </BreadcrumbItem>
                         <BreadcrumbSeparator />
                         <BreadcrumbItem>
-                            <BreadcrumbPage>Subcontractors</BreadcrumbPage>
+                            <BreadcrumbPage>{t("subcontractors.title")}</BreadcrumbPage>
                         </BreadcrumbItem>
                     </BreadcrumbList>
                 </Breadcrumb>
 
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold">Subcontractors</h1>
-                        <p className="text-muted-foreground mt-1">Manage external truck providers</p>
+                        <h1 className="text-3xl font-bold">{t("subcontractors.title")}</h1>
+                        <p className="text-muted-foreground mt-1">{t("subcontractors.subtitle")}</p>
                     </div>
                     <Button asChild>
                         <Link href="/admin/subcontractors/new">
                             <Plus className="mr-2 h-4 w-4" />
-                            Register Subcontractor
+                            {t("subcontractors.add")}
                         </Link>
                     </Button>
                 </div>
 
-                <div className="flex items-center gap-4 mb-6">
-                    <div className="relative flex-1 max-w-sm">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 mb-6">
+                    <div className="relative flex-1 max-w-sm w-full">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Search name, contact..."
-                            className="pl-10"
+                            placeholder={t("subcontractors.search")}
+                            className="pl-10 w-full"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -126,39 +128,39 @@ export default function SubcontractorsListPage() {
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
                 ) : (
-                    <div className="rounded-md border">
+                    <div className="rounded-md border overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
                                         <div className="flex items-center">
-                                            Name {getSortIcon('name')}
+                                            {t("subcontractors.table.name")} {getSortIcon('name')}
                                         </div>
                                     </TableHead>
                                     <TableHead className="cursor-pointer" onClick={() => handleSort('type')}>
                                         <div className="flex items-center">
-                                            Type {getSortIcon('type')}
+                                            {t("subcontractors.table.type")} {getSortIcon('type')}
                                         </div>
                                     </TableHead>
                                     <TableHead className="cursor-pointer" onClick={() => handleSort('contactPerson')}>
                                         <div className="flex items-center">
-                                            Contact {getSortIcon('contactPerson')}
+                                            {t("subcontractors.table.contact")} {getSortIcon('contactPerson')}
                                         </div>
                                     </TableHead>
-                                    <TableHead>Phone / Mobile</TableHead>
+                                    <TableHead>{t("subcontractors.table.phone")}</TableHead>
                                     <TableHead className="cursor-pointer" onClick={() => handleSort('status')}>
                                         <div className="flex items-center">
-                                            Status {getSortIcon('status')}
+                                            {t("subcontractors.table.status")} {getSortIcon('status')}
                                         </div>
                                     </TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead className="text-right">{t("common.actions")}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredSubs.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                                            No subcontractors found
+                                            {t("subcontractors.noData")}
                                         </TableCell>
                                     </TableRow>
                                 ) : (

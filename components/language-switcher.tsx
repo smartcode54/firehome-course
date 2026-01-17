@@ -8,22 +8,41 @@ export function LanguageSwitcher() {
     const { language, setLanguage } = useLanguage();
 
     return (
-        <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setLanguage(language === "en" ? "th" : "en")}
-            className="w-auto min-w-[100px] font-medium flex items-center gap-2"
-            title={language === "en" ? "Switch to Thai" : "Switch to English"}
-        >
-            <Image
-                src={language === "en" ? "/england_round_icon_64.png" : "/thailand_round_icon_64.png"}
-                alt={language === "en" ? "English flag" : "Thai flag"}
-                width={20}
-                height={14}
-                className="object-cover rounded-sm"
-                style={{ width: "30px", height: "30px" }}
-            />
-            <span>{language === "en" ? "English" : "ไทย"}</span>
-        </Button>
+        <div className="flex items-center p-1 bg-muted/50 rounded-lg border border-border">
+            <Button
+                variant={language === "en" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setLanguage("en")}
+                className={`h-8 px-3 rounded-md transition-all ${language === "en" ? "shadow-sm" : "hover:bg-transparent"}`}
+            >
+                <div className="flex items-center gap-2">
+                    <Image
+                        src="/england_round_icon_64.png"
+                        alt="English"
+                        width={20}
+                        height={20}
+                        className="w-5 h-5 rounded-full object-cover"
+                    />
+                    <span className="text-xs font-medium">EN</span>
+                </div>
+            </Button>
+            <Button
+                variant={language === "th" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setLanguage("th")}
+                className={`h-8 px-3 rounded-md transition-all ${language === "th" ? "shadow-sm" : "hover:bg-transparent"}`}
+            >
+                <div className="flex items-center gap-2">
+                    <Image
+                        src="/thailand_round_icon_64.png"
+                        alt="Thai"
+                        width={20}
+                        height={20}
+                        className="w-5 h-5 rounded-full object-cover"
+                    />
+                    <span className="text-xs font-medium">TH</span>
+                </div>
+            </Button>
+        </div>
     );
 }

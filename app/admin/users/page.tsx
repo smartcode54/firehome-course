@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { db } from "@/firebase/client";
 import { useAuth } from "@/context/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useLanguage } from "@/context/language";
 
 type UserData = {
     uid: string;
@@ -33,6 +36,7 @@ type UserData = {
 };
 
 export default function AdminUsersPage() {
+    const { t } = useLanguage();
     const [users, setUsers] = useState<UserData[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -59,26 +63,56 @@ export default function AdminUsersPage() {
     const currentUser = auth?.currentUser;
     const functions = getFunctions(undefined, "asia-southeast1");
 
-    const fetchUsers = async () => {
-        try {
-            setLoading(true);
-            const getUsers = httpsCallable(functions, 'getUsers');
-            const result = await getUsers();
-            const data = result.data as { users: UserData[] };
-            setUsers(data.users);
-        } catch (error) {
-            console.error("Error fetching users:", error);
-            toast.error("Failed to fetch users. Please try again.");
-        } finally {
-            setLoading(false);
-        }
-    };
+    const [limitCount, setLimitCount] = useState(50);
 
+    // Fetch users from Firestore
     useEffect(() => {
-        if (currentUser) {
-            fetchUsers();
-        }
-    }, [currentUser]);
+        if (!currentUser) return;
+
+        setLoading(true);
+        const usersRef = collection(db, "users");
+        // Order by lastLogin if available, otherwise uid
+        const q = query(usersRef, orderBy("lastLogin", "desc"), limit(limitCount));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const usersData: UserData[] = [];
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                usersData.push({
+                    uid: doc.id,
+                    email: data.email || "",
+                    displayName: data.displayName || "",
+                    photoURL: data.photoURL,
+                    // Map Firestore 'role' to customClaims structure to match UI expectation
+                    customClaims: {
+                        role: data.role,
+                        admin: data.role === 'admin'
+                    },
+                    metadata: {
+                        lastSignInTime: data.lastLogin || null,
+                        creationTime: data.authCreationTime || null,
+                    },
+                    providerData: data.providerData || [], // Fallback if not scheduled
+                } as unknown as UserData);
+            });
+            setUsers(usersData);
+            setLoading(false);
+        }, (err) => {
+            console.error("Error fetching users from Firestore:", err);
+            // Fallback to Cloud Function if Firestore fails (or is empty?)
+            // fetchUsers(); // Optional: Decide if we want fallback
+            setLoading(false);
+            toast.error("Failed to load users from live database.");
+        });
+
+        return () => unsubscribe();
+    }, [currentUser, limitCount]);
+
+    // Legacy Cloud Function fetch (kept for reference or full sync)
+    const fetchUsers = async () => {
+        // Only used for manual refresh if needed, but onSnapshot handles it.
+        // We can keep the Cloud Function for "Sync" but not for display.
+    };
 
     const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -152,15 +186,15 @@ export default function AdminUsersPage() {
 
         switch (role) {
             case 'admin':
-                return <Badge className="bg-red-500 hover:bg-red-600"><Shield className="w-3 h-3 mr-1" /> Admin</Badge>;
+                return <Badge className="bg-green-700 hover:bg-slate-600"><Shield className="w-3 h-3 mr-1" /> {t("users.role.admin")}</Badge>;
             case 'partner':
-                return <Badge className="bg-purple-500 hover:bg-purple-600"><User className="w-3 h-3 mr-1" /> Partner</Badge>;
+                return <Badge className="bg-purple-500 hover:bg-purple-600"><User className="w-3 h-3 mr-1" /> {t("users.role.partner")}</Badge>;
             case 'subcontractor':
-                return <Badge className="bg-orange-500 hover:bg-orange-600"><User className="w-3 h-3 mr-1" /> Subcontractor</Badge>;
+                return <Badge className="bg-orange-500 hover:bg-orange-600"><User className="w-3 h-3 mr-1" /> {t("users.role.subcontractor")}</Badge>;
             case 'customer':
-                return <Badge className="bg-blue-500 hover:bg-blue-600"><User className="w-3 h-3 mr-1" /> Customer</Badge>;
+                return <Badge className="bg-blue-500 hover:bg-blue-600"><User className="w-3 h-3 mr-1" /> {t("users.role.customer")}</Badge>;
             default:
-                return <Badge variant="outline"><User className="w-3 h-3 mr-1" /> User</Badge>;
+                return <Badge variant="outline"><User className="w-3 h-3 mr-1" /> {t("users.role.user")}</Badge>;
         }
     };
 
@@ -223,30 +257,30 @@ export default function AdminUsersPage() {
 
     return (
         <div className="p-6 space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">{t("users.title")}</h1>
                     <p className="text-muted-foreground mt-2">
-                        Manage users and their permissions.
+                        {t("users.subtitle")}
                     </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     <Button onClick={handleSyncUsers} variant="secondary" disabled={isSyncing}>
                         {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Loader2 className="mr-2 h-4 w-4" />}
-                        Sync Database
+                        {t("users.sync")}
                     </Button>
                     <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                         <DialogTrigger asChild>
                             <Button>
                                 <Plus className="mr-2 h-4 w-4" />
-                                Add User
+                                {t("users.add")}
                             </Button>
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Create New User</DialogTitle>
+                                <DialogTitle>{t("users.createTitle")}</DialogTitle>
                                 <DialogDescription>
-                                    Add a new user to the system. Assign a specific role.
+                                    {t("users.createDesc")}
                                 </DialogDescription>
                             </DialogHeader>
                             <form onSubmit={handleCreateUser} className="space-y-4">
@@ -318,30 +352,30 @@ export default function AdminUsersPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>All Users ({users.length})</CardTitle>
+                    <CardTitle>{t("users.allUsers")} ({users.length})</CardTitle>
                     <CardDescription>
-                        List of all registered users in the system.
+                        {t("users.allUsersDesc")}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="rounded-md border">
+                    <div className="rounded-md border overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="cursor-pointer" onClick={() => handleSort('displayName')}>
                                         <div className="flex items-center">
-                                            User {getSortIcon('displayName')}
+                                            {t("users.table.user")} {getSortIcon('displayName')}
                                         </div>
                                     </TableHead>
                                     <TableHead className="cursor-pointer" onClick={() => handleSort('role')}>
                                         <div className="flex items-center">
-                                            Role {getSortIcon('role')}
+                                            {t("users.table.role")} {getSortIcon('role')}
                                         </div>
                                     </TableHead>
-                                    <TableHead>Providers</TableHead>
+                                    <TableHead>{t("users.table.providers")}</TableHead>
                                     <TableHead className="cursor-pointer" onClick={() => handleSort('lastSignInTime')}>
                                         <div className="flex items-center">
-                                            Last Sign In {getSortIcon('lastSignInTime')}
+                                            {t("users.table.lastSignIn")} {getSortIcon('lastSignInTime')}
                                         </div>
                                     </TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
@@ -387,7 +421,7 @@ export default function AdminUsersPage() {
                                                     disabled={isCurrentUser}
                                                     onClick={() => openEditRole(user)}
                                                 >
-                                                    <Edit className="h-4 w-4 mr-1" /> Edit Role
+                                                    <Edit className="h-4 w-4 mr-1" /> {t("users.editRole")}
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
