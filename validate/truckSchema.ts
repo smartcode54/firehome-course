@@ -37,7 +37,7 @@ export const truckSchema = z.object({
     province: z.string().min(1, "Province is required"),
 
     vin: z.string().length(17, "VIN must be exactly 17 characters").optional().or(z.literal("")), // Made optional for subcontractors
-    engineNumber: z.string().length(9, "Engine number is required").optional().or(z.literal("")), // Made optional for subcontractors
+    engineNumber: z.string().length(10, "Engine number is required").optional().or(z.literal("")), // Made optional for subcontractors
     truckStatus: z.union([
         z.enum(["active", "inactive", "maintenance", "insurance-claim", "sold"]),
         z.literal(""),
@@ -51,25 +51,24 @@ export const truckSchema = z.object({
     color: z.string().min(1, "Color is required"),
     type: z.string().min(1, "Type is required"),
     seats: z.string().refine(v => !v || (parseInt(v) >= 0 && parseInt(v) <= 10), "Seats must be 0-10 and cannot be negative"),
-    //validate truck engines
-    fuelType: z.string().min(1, "Fuel type is required"),
+    //validate truck engines (required for own fleet, optional for subcontractors)
+    fuelType: z.string().optional().default(""),
     engineCapacity: optionalNumber(0, 20000, "Engine capacity"),
     fuelCapacity: optionalNumber(0, 1000, "Fuel capacity"),
     maxLoadWeight: optionalNumber(0, 100000, "Max load weight"),
-    //validate truck registration and driver assignment
+    //validate truck registration
     registrationDate: z.string().optional(), // Optional for Subcontractors
     buyingDate: z.string().optional(), // Optional for Subcontractors
-    driver: z.string().min(1, "Driver is required").optional().or(z.literal("")), // Optional for Subcon setup (can be assigned later)
     notes: z.string().optional(),
-    // Images (Required)
-    imageFrontRight: z.string().min(1, "Front-Right image is required"),
-    imageFrontLeft: z.string().min(1, "Front-Left image is required"),
-    imageBackRight: z.string().min(1, "Back-Right image is required"),
-    imageBackLeft: z.string().min(1, "Back-Left image is required"),
+    // Images (Required for owned trucks, optional for subcontractor trucks)
+    imageFrontRight: z.string().optional().default(""),
+    imageFrontLeft: z.string().optional().default(""),
+    imageBackRight: z.string().optional().default(""),
+    imageBackLeft: z.string().optional().default(""),
 
-    // Documents (Required)
-    documentTax: z.string().min(1, "Tax document is required"),
-    documentRegister: z.string().min(1, "Registration document is required"),
+    // Documents (Required for owned trucks, optional for subcontractor trucks)
+    documentTax: z.string().optional().default(""),
+    documentRegister: z.string().optional().default(""),
 
     // Insurance Information (Optional)
     insurancePolicyId: z.string().optional(), // maps to policy_id
@@ -81,6 +80,35 @@ export const truckSchema = z.object({
     insurancePremium: optionalNumber(0, 1000000, "Premium"), // maps to premium
     insuranceDocuments: z.array(z.string()).optional(), // maps to documents
     insuranceNotes: z.string().optional(), // maps to notes
+}).superRefine((data, ctx) => {
+    // Conditional validation: images and documents required for own fleet only
+    if (data.ownershipType === "own") {
+        if (!data.imageFrontRight) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Front-Right image is required for own fleet", path: ["imageFrontRight"] });
+        }
+        if (!data.imageFrontLeft) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Front-Left image is required for own fleet", path: ["imageFrontLeft"] });
+        }
+        if (!data.imageBackRight) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Back-Right image is required for own fleet", path: ["imageBackRight"] });
+        }
+        if (!data.imageBackLeft) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Back-Left image is required for own fleet", path: ["imageBackLeft"] });
+        }
+        if (!data.documentTax) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Tax document is required for own fleet", path: ["documentTax"] });
+        }
+        if (!data.documentRegister) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Registration document is required for own fleet", path: ["documentRegister"] });
+        }
+        if (!data.fuelType) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Fuel type is required for own fleet", path: ["fuelType"] });
+        }
+    }
+    // Subcontractor trucks must have a subcontractor selected
+    if (data.ownershipType === "subcontractor" && !data.subcontractorId) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Subcontractor is required", path: ["subcontractorId"] });
+    }
 });
 
 // Type inference from schema - use input type for form values
@@ -111,7 +139,6 @@ export const truckDefaultValues: TruckFormValues = {
     maxLoadWeight: undefined,
     registrationDate: "",
     buyingDate: "",
-    driver: "",
     notes: "",
     // Insurance
     insurancePolicyId: "",

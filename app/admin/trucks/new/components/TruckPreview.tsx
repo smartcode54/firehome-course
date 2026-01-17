@@ -11,6 +11,7 @@ import { FileViewer } from "@/components/ui/file-viewer";
 
 interface TruckPreviewProps {
     data: z.infer<typeof truckSchema>;
+    subcontractorName?: string;
     onEdit: () => void;
     onConfirm: () => void;
     onCancel: () => void;
@@ -19,6 +20,7 @@ interface TruckPreviewProps {
 
 export function TruckPreview({
     data,
+    subcontractorName,
     onEdit,
     onConfirm,
     onCancel,
@@ -28,7 +30,7 @@ export function TruckPreview({
     const [isViewerOpen, setIsViewerOpen] = useState(false);
     const [viewerIndex, setViewerIndex] = useState(0);
 
-    const formatDate = (dateString: string) => {
+    const formatDate = (dateString: string | undefined) => {
         if (!dateString) return "-";
         try {
             const date = new Date(dateString);
@@ -76,12 +78,22 @@ export function TruckPreview({
                 </div>
             </div>
 
-            {/* Identification Section */}
+            {/* Ownership & Identification Section */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Identification</CardTitle>
+                    <CardTitle>Ownership & Identification</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 gap-4">
+                    <div>
+                        <p className="text-sm font-medium text-muted-foreground">Ownership Type</p>
+                        <p className="text-base font-semibold capitalize">{data.ownershipType === "subcontractor" ? "Subcontractor" : "Own Fleet"}</p>
+                    </div>
+                    {data.ownershipType === "subcontractor" && subcontractorName && (
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">Subcontractor</p>
+                            <p className="text-base font-semibold">{subcontractorName}</p>
+                        </div>
+                    )}
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">License Plate</p>
                         <p className="text-base font-semibold">{formatLicensePlate(data.licensePlate)}</p>
@@ -90,14 +102,18 @@ export function TruckPreview({
                         <p className="text-sm font-medium text-muted-foreground">Province</p>
                         <p className="text-base font-semibold">{data.province}</p>
                     </div>
-                    <div>
-                        <p className="text-sm font-medium text-muted-foreground">VIN</p>
-                        <p className="text-base font-semibold">{data.vin}</p>
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-muted-foreground">Engine Number</p>
-                        <p className="text-base font-semibold">{data.engineNumber}</p>
-                    </div>
+                    {data.vin && (
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">VIN</p>
+                            <p className="text-base font-semibold">{data.vin}</p>
+                        </div>
+                    )}
+                    {data.engineNumber && (
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">Engine Number</p>
+                            <p className="text-base font-semibold">{data.engineNumber}</p>
+                        </div>
+                    )}
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">Status</p>
                         <p className="text-base font-semibold capitalize">{data.truckStatus}</p>
@@ -176,10 +192,6 @@ export function TruckPreview({
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">Buying Date</p>
                         <p className="text-base font-semibold">{formatDate(data.buyingDate)}</p>
-                    </div>
-                    <div className="col-span-2">
-                        <p className="text-sm font-medium text-muted-foreground">Driver</p>
-                        <p className="text-base font-semibold">{data.driver}</p>
                     </div>
                     {data.notes && (
                         <div className="col-span-2">

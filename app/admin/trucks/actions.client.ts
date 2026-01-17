@@ -24,7 +24,6 @@ export interface TruckData {
     maxLoadWeight?: number;
     registrationDate: string;
     buyingDate: string;
-    driver: string;
     notes?: string;
     // Images
     imageFrontRight?: string;
@@ -101,7 +100,6 @@ export async function getTrucksClient(): Promise<TruckData[]> {
                 maxLoadWeight: data.maxLoadWeight,
                 registrationDate: data.registrationDate || "",
                 buyingDate: data.buyingDate || "",
-                driver: data.driver || "",
                 notes: data.notes || "",
 
                 // New Fields
@@ -171,7 +169,6 @@ export async function getTruckByIdClient(id: string): Promise<TruckData | null> 
             maxLoadWeight: data.maxLoadWeight,
             registrationDate: data.registrationDate || "",
             buyingDate: data.buyingDate || "",
-            driver: data.driver || "",
             notes: data.notes || "",
 
             // New Fields

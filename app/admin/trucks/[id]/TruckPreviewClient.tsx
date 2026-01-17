@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 import { getTruckByIdClient, TruckData } from "../actions.client";
 import { FileViewer } from "@/components/ui/file-viewer";
+import { getSubcontractors } from "../../subcontractors/actions.client";
 
 export default function TruckPreviewClient() {
     const params = useParams();
@@ -19,9 +20,9 @@ export default function TruckPreviewClient() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Viewer State
     const [isViewerOpen, setIsViewerOpen] = useState(false);
     const [viewerIndex, setViewerIndex] = useState(0);
+    const [subcontractors, setSubcontractors] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchTruck = async () => {
@@ -46,6 +47,11 @@ export default function TruckPreviewClient() {
             fetchTruck();
         }
     }, [truckId]);
+
+    // Fetch subcontractors to resolve names
+    useEffect(() => {
+        getSubcontractors().then(setSubcontractors);
+    }, []);
 
     const formatDate = (date: Date | string | null) => {
         if (!date) return "-";
@@ -341,20 +347,24 @@ export default function TruckPreviewClient() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <User className="h-5 w-5 text-primary" />
-                                Assignment
+                                Ownership & Assignment
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
                                 <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Assigned Driver</p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                                            {truck.driver.charAt(0)}
-                                        </div>
-                                        <span className="font-medium">{truck.driver}</span>
-                                    </div>
+                                    <p className="text-sm font-medium text-muted-foreground">Owner Type</p>
+                                    <p className="font-medium capitalize">{truck.ownershipType === "subcontractor" ? "Subcontractor" : "Own Fleet"}</p>
                                 </div>
+                                {truck.ownershipType === "subcontractor" && truck.subcontractorId && (
+                                    <>
+                                        <Separator />
+                                        <div>
+                                            <p className="text-sm font-medium text-muted-foreground">Subcontractor</p>
+                                            <p className="font-medium">{subcontractors.find(s => s.id === truck.subcontractorId)?.name || truck.subcontractorId}</p>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </CardContent>
                     </Card>

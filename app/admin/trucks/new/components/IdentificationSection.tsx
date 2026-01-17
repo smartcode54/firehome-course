@@ -108,7 +108,7 @@ export function IdentificationSection() {
                                 <FormControl>
                                     <Input
                                         placeholder="e.g., 4D56ABC123"
-                                        maxLength={9}
+                                        maxLength={10}
                                         {...field}
                                         onChange={(e) => {
                                             // Remove Thai characters

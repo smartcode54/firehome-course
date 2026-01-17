@@ -47,13 +47,7 @@ import { uploadTruckFile, saveNewTruckToFirestoreClient, checkLicensePlateExists
 import { getSubcontractors } from "../../subcontractors/actions.client";
 
 // Subcontractor Selector Component
-function SubcontractorSelector({ value, onChange }: { value?: string, onChange: (val: string) => void }) {
-    const [subs, setSubs] = useState<any[]>([]);
-
-    useEffect(() => {
-        getSubcontractors().then(setSubs);
-    }, []);
-
+function SubcontractorSelector({ value, onChange, subcontractors }: { value?: string, onChange: (val: string) => void, subcontractors: any[] }) {
     return (
         <Select onValueChange={onChange} value={value || ""}>
             <FormControl>
@@ -62,7 +56,7 @@ function SubcontractorSelector({ value, onChange }: { value?: string, onChange: 
                 </SelectTrigger>
             </FormControl>
             <SelectContent>
-                {subs.map(sub => (
+                {subcontractors.map(sub => (
                     <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>
                 ))}
             </SelectContent>
@@ -76,6 +70,12 @@ export default function CreateTruckPage() {
     const [error, setError] = useState<string | null>(null);
     const [showPreview, setShowPreview] = useState(false);
     const [previewData, setPreviewData] = useState<z.infer<typeof truckSchema> | null>(null);
+    const [subcontractors, setSubcontractors] = useState<any[]>([]);
+
+    // Load subcontractors
+    useEffect(() => {
+        getSubcontractors().then(setSubcontractors);
+    }, []);
 
     // Store files to be uploaded: Key = Blob URL, Value = File object
     const [filesToUpload] = useState<Map<string, File>>(() => new Map());
@@ -194,6 +194,7 @@ export default function CreateTruckPage() {
                     {/* ... Error display ... */}
                     <TruckPreview
                         data={previewData}
+                        subcontractorName={subcontractors.find(s => s.id === previewData.subcontractorId)?.name}
                         onEdit={handleEdit}
                         onConfirm={handleConfirmSave}
                         onCancel={() => router.push("/admin/trucks")}
@@ -203,7 +204,18 @@ export default function CreateTruckPage() {
             ) : (
                 /* Form with React Hook Form */
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6">
+                    <form onSubmit={form.handleSubmit(onSubmit as any, (errors) => {
+                        console.error("Form validation errors:", errors);
+                        const errorMessages = Object.entries(errors).map(([field, error]) => `${field}: ${(error as any)?.message || 'Invalid'}`).join(', ');
+                        setError(`Validation failed: ${errorMessages}`);
+                    })} className="space-y-6">
+                        {/* Error Display */}
+                        {error && (
+                            <div className="p-4 border border-destructive bg-destructive/10 rounded-lg text-destructive">
+                                <p className="font-medium">Error</p>
+                                <p className="text-sm">{error}</p>
+                            </div>
+                        )}
                         {/* ... Ownership Section ... */}
                         <div className="bg-card border rounded-lg p-6">
                             <h3 className="text-lg font-medium mb-4">Ownership</h3>
@@ -251,6 +263,7 @@ export default function CreateTruckPage() {
                                                 <SubcontractorSelector
                                                     value={field.value}
                                                     onChange={field.onChange}
+                                                    subcontractors={subcontractors}
                                                 />
                                                 <FormMessage />
                                             </FormItem>

@@ -25,7 +25,7 @@ export function RegistrationSection() {
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                         control={control}
                         name="registrationDate"
@@ -47,19 +47,6 @@ export function RegistrationSection() {
                                 <FormLabel>{t("buying Date")}</FormLabel>
                                 <FormControl>
                                     <Input type="date" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={control}
-                        name="driver"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{t("driver")}</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="e.g., John Smith" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -88,3 +75,4 @@ export function RegistrationSection() {
         </Card>
     );
 }
+

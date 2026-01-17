@@ -27,6 +27,17 @@ export const checkLicensePlateExists = async (licensePlate: string): Promise<boo
     }
 };
 
+// Helper to remove undefined values from an object (Firestore doesn't accept undefined)
+const removeUndefinedFields = <T extends Record<string, any>>(obj: T): Partial<T> => {
+    const result: Partial<T> = {};
+    for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key) && obj[key] !== undefined) {
+            result[key] = obj[key];
+        }
+    }
+    return result;
+};
+
 export const saveNewTruckToFirestoreClient = async (
     data: z.infer<typeof truckSchema>,
     userId: string
@@ -34,11 +45,15 @@ export const saveNewTruckToFirestoreClient = async (
     try {
         console.log("[saveNewTruckToFirestoreClient] Starting save process...");
 
+        // Sanitize data: remove undefined values (Firestore rejects them)
+        const sanitizedData = removeUndefinedFields(data);
+        console.log("[saveNewTruckToFirestoreClient] Sanitized data, removed undefined fields.");
+
         // Create the truck document
         console.log("[saveNewTruckToFirestoreClient] Creating truck document...");
         const trucksRef = collection(db, "trucks");
         const docRef = await addDoc(trucksRef, {
-            ...data,
+            ...sanitizedData,
             createdBy: userId,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -69,9 +84,12 @@ export const updateTruckInFirestoreClient = async (
     try {
         console.log("[updateTruckInFirestoreClient] Starting update process...");
 
+        // Sanitize data: remove undefined values (Firestore rejects them)
+        const sanitizedData = removeUndefinedFields(data);
+
         // Prepare truck data for Firestore
         const truckData: Record<string, any> = {
-            ...data,
+            ...sanitizedData,
             updatedAt: serverTimestamp(),
             updatedBy: userId,
         };
